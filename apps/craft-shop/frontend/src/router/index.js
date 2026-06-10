@@ -21,9 +21,14 @@ const router = createRouter({
 })
 
 router.beforeEach(async (to) => {
+  const { data } = await supabase.auth.getSession()
+
+  if (to.name === 'admin-login' && data.session) {
+    return '/admin'
+  }
+
   if (!to.meta.requiresAuth) return true
 
-  const { data } = await supabase.auth.getSession()
   if (!data.session) return '/admin/login'
 
   return true

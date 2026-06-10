@@ -82,6 +82,7 @@ const props = defineProps({
 const emit = defineEmits(['save', 'cancel'])
 
 const local = reactive({
+  id: null,
   name: '',
   description: '',
   price: 0,
@@ -102,6 +103,7 @@ watch(
   () => props.product,
   (value) => {
     Object.assign(local, {
+      id: null,
       name: '',
       description: '',
       price: 0,
@@ -169,9 +171,15 @@ async function submitForm() {
       : local.video_url
 
     emit('save', {
-      ...local,
+      id: local.id,
+      name: local.name,
+      description: local.description,
+      price: local.price,
+      category: local.category,
       image_url: imageUrl,
       video_url: videoUrl,
+      is_available: local.is_available,
+      is_featured: local.is_featured,
       slug: slugify(local.name)
     })
   } catch (error) {

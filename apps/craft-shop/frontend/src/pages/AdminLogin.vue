@@ -21,7 +21,9 @@
           Password
           <input v-model="password" class="input" type="password" placeholder="Your password" required />
         </label>
-        <button class="btn" type="submit">Login</button>
+        <button class="btn" type="submit" :disabled="loading">
+          {{ loading ? 'Signing in...' : 'Login' }}
+        </button>
         <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
       </form>
     </section>
@@ -29,7 +31,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { supabase } from '../lib/supabase'
 
@@ -37,9 +39,17 @@ const router = useRouter()
 const email = ref('')
 const password = ref('')
 const errorMessage = ref('')
+const loading = ref(false)
+
+onMounted(async () => {
+  const { data } = await supabase.auth.getSession()
+  if (data.session) router.replace('/admin')
+})
 
 async function login() {
   errorMessage.value = ''
+  loading.value = true
+
   const { error } = await supabase.auth.signInWithPassword({
     email: email.value,
     password: password.value
@@ -47,9 +57,10 @@ async function login() {
 
   if (error) {
     errorMessage.value = error.message
+    loading.value = false
     return
   }
 
-  router.push('/admin')
+  router.replace('/admin')
 }
 </script>

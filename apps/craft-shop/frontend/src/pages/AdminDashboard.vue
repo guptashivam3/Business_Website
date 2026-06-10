@@ -2,10 +2,13 @@
   <header class="header admin-header">
     <div class="container header-row">
       <div>
-        <RouterLink to="/" class="eyebrow-link">View Shop</RouterLink>
+        <p class="eyebrow">Owner Dashboard</p>
         <div class="brand">Craft Shop Admin</div>
       </div>
-      <button class="btn secondary" @click="logout">Logout</button>
+      <div class="button-row">
+        <RouterLink to="/" class="btn secondary">View Shop</RouterLink>
+        <button class="btn danger" @click="logout">Logout</button>
+      </div>
     </div>
   </header>
 
@@ -62,6 +65,7 @@
             <p class="muted">Upload the product photo here. The public URL is saved automatically.</p>
           </div>
         </div>
+        <p v-if="productError" class="error-message">{{ productError }}</p>
         <ProductForm :product="selectedProduct" @save="saveProduct" @cancel="closeProductForm" />
       </div>
 
@@ -169,6 +173,7 @@ const activeSection = ref('products')
 const galleryFile = ref(null)
 const galleryPreview = ref('')
 const savingGallery = ref(false)
+const productError = ref('')
 const placeholder = 'https://placehold.co/600x600?text=Handmade'
 
 const galleryForm = reactive({
@@ -185,18 +190,21 @@ onMounted(async () => {
 })
 
 function openAddProduct() {
+  productError.value = ''
   selectedProduct.value = {}
   showProductForm.value = true
   activeSection.value = 'products'
 }
 
 function editProduct(product) {
-  selectedProduct.value = product
+  productError.value = ''
+  selectedProduct.value = { ...product }
   showProductForm.value = true
   activeSection.value = 'products'
 }
 
 function closeProductForm() {
+  productError.value = ''
   selectedProduct.value = {}
   showProductForm.value = false
 }
@@ -212,6 +220,8 @@ async function loadProducts() {
 }
 
 async function saveProduct(product) {
+  productError.value = ''
+
   const payload = {
     name: product.name,
     slug: product.slug,
@@ -231,6 +241,7 @@ async function saveProduct(product) {
 
   const { error } = await query
   if (error) {
+    productError.value = error.message
     alert(error.message)
     return
   }
