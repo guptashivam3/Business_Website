@@ -6,6 +6,7 @@ node_modules/
 dist/
 
 .vercel/
+apps/craft-shop/_incoming_photos/
 .DS_Store
 Thumbs.db
 
