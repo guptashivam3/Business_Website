@@ -1,8 +1,18 @@
 <template>
   <div class="login-page">
+    <div class="login-shell">
+      <aside class="login-panel">
+        <p class="login-panel-kicker">Owner workspace</p>
+        <h2>Manage products, gallery, and availability in one focused place.</h2>
+        <div class="login-panel-list">
+          <span>Upload product photos and videos</span>
+          <span>Mark items available, featured, or sold out</span>
+          <span>Keep customer-facing pages fresh without code</span>
+        </div>
+      </aside>
+
     <div class="login-card">
       <div class="login-brand">
-        <span class="login-logo">LC</span>
         <h1 class="login-title">{{ shopName }}</h1>
         <p class="login-sub">Admin Access</p>
       </div>
@@ -37,6 +47,7 @@
       </form>
 
       <RouterLink to="/" class="login-back">Back to Shop</RouterLink>
+    </div>
     </div>
   </div>
 </template>
@@ -87,37 +98,81 @@ async function login() {
   min-height: 100vh;
   padding: 32px 20px;
   background:
-    radial-gradient(circle at 20% 10%, #f2d7c2 0, transparent 32%),
+    radial-gradient(circle at 18% 12%, rgba(242, 215, 194, 0.9) 0, transparent 32%),
+    radial-gradient(circle at 80% 76%, rgba(201, 168, 76, 0.18) 0, transparent 30%),
     #fff3e4;
+}
+
+.login-shell {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(340px, 420px);
+  width: min(960px, 100%);
+  overflow: hidden;
+  border: 1px solid #eadfd2;
+  border-radius: 28px;
+  background: rgba(255, 253, 248, 0.92);
+  box-shadow: 0 28px 80px rgba(65, 42, 24, 0.16);
+  animation: riseIn 560ms ease both;
+}
+
+.login-panel {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 42px;
+  background:
+    linear-gradient(135deg, rgba(38, 31, 26, 0.96), rgba(121, 64, 31, 0.92)),
+    #261f1a;
+  color: #ffffff;
+}
+
+.login-panel-kicker {
+  margin: 0 0 14px;
+  color: #f2d7c2;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.login-panel h2 {
+  margin: 0 0 24px;
+  font-size: clamp(30px, 4vw, 48px);
+  line-height: 1.08;
+}
+
+.login-panel-list {
+  display: grid;
+  gap: 12px;
+}
+
+.login-panel-list span {
+  position: relative;
+  padding-left: 18px;
+  color: rgba(255, 255, 255, 0.78);
+  line-height: 1.5;
+}
+
+.login-panel-list span::before {
+  content: "";
+  position: absolute;
+  top: 0.65em;
+  left: 0;
+  width: 7px;
+  height: 7px;
+  border-radius: 99px;
+  background: #c9a84c;
 }
 
 .login-card {
   width: 100%;
-  max-width: 420px;
   padding: 38px 30px;
-  border: 1px solid #eadfd2;
-  border-radius: 24px;
   background: #ffffff;
-  box-shadow: 0 24px 70px rgba(65, 42, 24, 0.14);
 }
 
 .login-brand {
   margin-bottom: 30px;
-  text-align: center;
 }
-
-.login-logo {
-  display: inline-grid;
-  place-items: center;
-  width: 58px;
-  height: 58px;
-  margin-bottom: 12px;
-  border-radius: 999px;
-  background: #a85f33;
-  color: #ffffff;
-  font-weight: 900;
-}
-
 .login-title {
   margin: 0;
   color: #241f1a;
@@ -227,5 +282,33 @@ async function login() {
 
 .login-back:hover {
   color: #a85f33;
+}
+
+@keyframes riseIn {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 760px) {
+  .login-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .login-panel {
+    padding: 28px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-shell {
+    animation: none;
+  }
 }
 </style>

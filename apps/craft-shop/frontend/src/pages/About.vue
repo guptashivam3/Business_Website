@@ -1,5 +1,13 @@
 <template>
   <div class="about-page">
+    <div class="site-marquee">
+      <div class="site-marquee-track">
+        <span>Meet Laxmi Gupta, founder and maker</span>
+        <span>Custom handmade gifting for celebrations</span>
+        <span>Contact directly for ideas, budget and timing</span>
+      </div>
+    </div>
+
     <nav class="about-nav">
       <div class="container about-nav-inner">
         <RouterLink to="/" class="about-brand">
@@ -120,6 +128,50 @@ function whatsAppLink(message) {
     linear-gradient(180deg, #fffaf4 0%, #f8efe5 55%, #fffaf4 100%);
 }
 
+.site-marquee {
+  overflow: hidden;
+  min-height: 38px;
+  background: #261f1a;
+  color: #f8efe5;
+  font-size: 13px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.site-marquee-track {
+  display: inline-flex;
+  gap: 42px;
+  min-width: max-content;
+  padding: 8px 0;
+  animation: marquee 24s linear infinite;
+}
+
+.site-marquee-track span {
+  position: relative;
+}
+
+.site-marquee-track span::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: -24px;
+  width: 5px;
+  height: 5px;
+  border-radius: 99px;
+  background: #c9a84c;
+  transform: translateY(-50%);
+}
+
+@keyframes marquee {
+  from {
+    transform: translateX(100vw);
+  }
+
+  to {
+    transform: translateX(-100%);
+  }
+}
+
 .about-nav {
   position: sticky;
   top: 0;
@@ -197,6 +249,25 @@ function whatsAppLink(message) {
   color: #1f1a16;
   font-size: clamp(42px, 7vw, 76px);
   line-height: 0.98;
+}
+
+.about-copy,
+.owner-card,
+.story-card,
+.contact-card {
+  animation: riseIn 560ms ease both;
+}
+
+@keyframes riseIn {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .about-lead {
@@ -399,6 +470,16 @@ function whatsAppLink(message) {
 
   .owner-photo-placeholder {
     min-height: 300px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .site-marquee-track,
+  .about-copy,
+  .owner-card,
+  .story-card,
+  .contact-card {
+    animation: none;
   }
 }
 </style>

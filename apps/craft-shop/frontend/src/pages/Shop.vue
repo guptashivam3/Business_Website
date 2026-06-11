@@ -1,5 +1,14 @@
 <template>
   <div class="shop-page">
+    <div class="announcement-bar">
+      <div class="announcement-track">
+        <span>Custom handmade orders accepted on WhatsApp</span>
+        <span>Festive hampers, chocolate garlands, potlis and gift trays</span>
+        <span>Made personally by Laxmi Gupta</span>
+        <span>Share your occasion, budget and color theme</span>
+      </div>
+    </div>
+
     <nav class="shop-nav">
       <div class="container nav-inner">
         <RouterLink to="/" class="nav-brand">
@@ -9,7 +18,7 @@
         <div class="nav-links">
           <RouterLink to="/about" class="shop-btn ghost small">About</RouterLink>
           <RouterLink to="/gallery" class="shop-btn ghost small">Gallery</RouterLink>
-          <RouterLink to="/admin/login" class="shop-btn outline small">Admin</RouterLink>
+          <RouterLink to="/admin/login" class="admin-icon-link" aria-label="Admin login" title="Admin login">Admin</RouterLink>
         </div>
       </div>
     </nav>
@@ -58,6 +67,32 @@
             </div>
           </RouterLink>
         </div>
+      </div>
+    </section>
+
+    <section class="promise-section container">
+      <div class="promise-card primary">
+        <p class="section-label">Made personally</p>
+        <h2>Thoughtful gifts without the back-and-forth confusion.</h2>
+        <p>
+          Browse ready designs, send a reference, and confirm details directly with the maker.
+          Each order can be adapted by color, budget, occasion, and packing style.
+        </p>
+      </div>
+      <div class="promise-card">
+        <span>01</span>
+        <h3>Choose a design</h3>
+        <p>Pick from products or gallery inspiration.</p>
+      </div>
+      <div class="promise-card">
+        <span>02</span>
+        <h3>Confirm on WhatsApp</h3>
+        <p>Discuss budget, availability, timing, and delivery.</p>
+      </div>
+      <div class="promise-card">
+        <span>03</span>
+        <h3>Receive handmade work</h3>
+        <p>Made with care for gifting, rituals, and celebrations.</p>
       </div>
     </section>
 
@@ -119,9 +154,13 @@
         </button>
       </div>
 
-      <div v-if="loading" class="loading-wrap">
-        <div class="spinner"></div>
-        <span>Loading products...</span>
+      <div v-if="loading" class="skeleton-grid" aria-label="Loading products">
+        <div v-for="index in 6" :key="index" class="product-skeleton">
+          <div class="skeleton-media"></div>
+          <div class="skeleton-line short"></div>
+          <div class="skeleton-line"></div>
+          <div class="skeleton-line tiny"></div>
+        </div>
       </div>
 
       <div v-else-if="filteredProducts.length === 0" class="shop-empty-state">
@@ -243,7 +282,6 @@ const heroShowcaseProducts = computed(() => {
 })
 
 const heroPrimaryProduct = computed(() => heroShowcaseProducts.value[0] || null)
-const heroSecondaryProducts = computed(() => heroShowcaseProducts.value.slice(1, 3))
 
 function whatsAppLink(message) {
   return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`
@@ -271,6 +309,52 @@ async function loadProducts() {
   background:
     radial-gradient(circle at 12% 8%, rgba(184, 92, 56, 0.12), transparent 28rem),
     linear-gradient(180deg, #fffaf4 0%, #f8efe5 50%, #fffaf4 100%);
+}
+
+.announcement-bar {
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  min-height: 38px;
+  background: #261f1a;
+  color: #f8efe5;
+  font-size: 13px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.announcement-track {
+  display: inline-flex;
+  gap: 42px;
+  min-width: max-content;
+  padding: 8px 0;
+  animation: marquee 26s linear infinite;
+}
+
+.announcement-track span {
+  position: relative;
+}
+
+.announcement-track span::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: -24px;
+  width: 5px;
+  height: 5px;
+  border-radius: 99px;
+  background: #c9a84c;
+  transform: translateY(-50%);
+}
+
+@keyframes marquee {
+  from {
+    transform: translateX(100vw);
+  }
+
+  to {
+    transform: translateX(-100%);
+  }
 }
 
 .shop-nav {
@@ -366,6 +450,35 @@ async function loadProducts() {
   color: #ffffff;
 }
 
+.admin-icon-link {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  overflow: hidden;
+  border: 1px solid #d8c8b8;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.76);
+  color: transparent;
+  font-size: 0;
+  transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+}
+
+.admin-icon-link::before {
+  content: "";
+  width: 13px;
+  height: 13px;
+  border: 2px solid #77695f;
+  border-radius: 3px;
+  box-shadow: 0 -7px 0 -3px #77695f;
+}
+
+.admin-icon-link:hover {
+  border-color: #a85f33;
+  box-shadow: 0 10px 24px rgba(65, 42, 24, 0.12);
+  transform: translateY(-1px);
+}
+
 .hero {
   position: relative;
   overflow: hidden;
@@ -383,6 +496,30 @@ async function loadProducts() {
   grid-template-columns: minmax(0, 1fr) minmax(360px, 460px);
   gap: 48px;
   align-items: center;
+}
+
+.hero-text,
+.hero-showcase,
+.promise-card,
+.featured-card,
+.product-card {
+  animation: riseIn 560ms ease both;
+}
+
+.hero-showcase {
+  animation-delay: 90ms;
+}
+
+@keyframes riseIn {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .section-label {
@@ -525,6 +662,61 @@ async function loadProducts() {
   color: #261f1a;
   font-size: 13px;
   font-weight: 900;
+}
+
+.promise-section {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  padding: 24px 0 6px;
+}
+
+.promise-card {
+  min-height: 172px;
+  border: 1px solid #eadfd2;
+  border-radius: 22px;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 14px 34px rgba(65, 42, 24, 0.07);
+}
+
+.promise-card.primary {
+  background:
+    linear-gradient(135deg, rgba(255, 253, 248, 0.98), rgba(255, 243, 228, 0.92)),
+    #ffffff;
+}
+
+.promise-card span {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  margin-bottom: 14px;
+  border-radius: 999px;
+  background: #fff3e4;
+  color: #79401f;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.promise-card h2 {
+  margin: 0 0 10px;
+  color: #241f1a;
+  font-size: clamp(24px, 3vw, 34px);
+  line-height: 1.14;
+}
+
+.promise-card h3 {
+  margin: 0 0 8px;
+  color: #241f1a;
+  font-size: 18px;
+}
+
+.promise-card p {
+  margin: 0;
+  color: #6f6258;
+  font-size: 14px;
+  line-height: 1.65;
 }
 
 .featured-section {
@@ -697,6 +889,63 @@ async function loadProducts() {
   background: #fffdf8;
   color: #77695f;
   text-align: center;
+}
+
+.skeleton-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 20px;
+}
+
+.product-skeleton {
+  overflow: hidden;
+  border: 1px solid #eadfd2;
+  border-radius: 18px;
+  padding: 14px;
+  background: rgba(255, 255, 255, 0.8);
+  box-shadow: 0 14px 34px rgba(65, 42, 24, 0.06);
+}
+
+.skeleton-media,
+.skeleton-line {
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px;
+  background: #f2e5d7;
+}
+
+.skeleton-media {
+  aspect-ratio: 1 / 1;
+  margin-bottom: 14px;
+}
+
+.skeleton-line {
+  height: 13px;
+  margin-bottom: 10px;
+}
+
+.skeleton-line.short {
+  width: 44%;
+}
+
+.skeleton-line.tiny {
+  width: 32%;
+}
+
+.skeleton-media::after,
+.skeleton-line::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.64), transparent);
+  animation: shimmer 1.2s infinite;
+  transform: translateX(-100%);
+}
+
+@keyframes shimmer {
+  to {
+    transform: translateX(100%);
+  }
 }
 
 .spinner {
@@ -989,9 +1238,17 @@ async function loadProducts() {
   .featured-row {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .promise-section {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 600px) {
+  .announcement-bar {
+    font-size: 12px;
+  }
+
   .hero {
     padding-top: 36px;
   }
@@ -1028,7 +1285,8 @@ async function loadProducts() {
   }
 
   .featured-row,
-  .product-grid {
+  .product-grid,
+  .skeleton-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 12px;
   }
@@ -1056,6 +1314,26 @@ async function loadProducts() {
     bottom: 12px;
     min-width: 132px;
     padding: 10px 14px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .announcement-track,
+  .hero-text,
+  .hero-showcase,
+  .promise-card,
+  .featured-card,
+  .product-card,
+  .skeleton-media::after,
+  .skeleton-line::after {
+    animation: none;
+  }
+
+  .shop-btn,
+  .product-card,
+  .featured-card,
+  .hero-feature-card {
+    transition: none;
   }
 }
 </style>
