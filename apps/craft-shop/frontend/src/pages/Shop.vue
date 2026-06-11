@@ -9,7 +9,9 @@
         <div class="nav-links">
           <RouterLink to="/about" class="shop-btn ghost small">About Us</RouterLink>
           <RouterLink to="/gallery" class="shop-btn ghost small">Gallery</RouterLink>
-          <RouterLink to="/admin/login" class="admin-icon-link" aria-label="Admin login" title="Admin login">Admin</RouterLink>
+          <RouterLink to="/admin/login" class="admin-icon-link" aria-label="Admin login" title="Admin login">
+            <span aria-hidden="true">A</span>
+          </RouterLink>
         </div>
       </div>
     </nav>
@@ -469,30 +471,25 @@ async function loadProducts() {
 }
 
 .admin-icon-link {
-  display: grid;
-  place-items: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
   width: 38px;
   height: 38px;
-  overflow: hidden;
   border: 1px solid #d8c8b8;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.76);
-  color: transparent;
-  font-size: 0;
+  color: #77695f;
+  font-size: 13px;
+  font-weight: 900;
+  line-height: 1;
   transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
-}
-
-.admin-icon-link::before {
-  content: "";
-  width: 13px;
-  height: 13px;
-  border: 2px solid #77695f;
-  border-radius: 3px;
-  box-shadow: 0 -7px 0 -3px #77695f;
 }
 
 .admin-icon-link:hover {
   border-color: #a85f33;
+  color: #a85f33;
   box-shadow: 0 10px 24px rgba(65, 42, 24, 0.12);
   transform: translateY(-1px);
 }
