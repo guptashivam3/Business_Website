@@ -66,6 +66,25 @@ create table if not exists public.site_settings (
   updated_at timestamptz default now()
 );
 
+create table if not exists public.admin_users (
+  email text primary key,
+  created_at timestamptz default now()
+);
+
+create or replace function public.is_admin()
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1
+    from public.admin_users
+    where lower(email) = lower(coalesce(auth.jwt() ->> 'email', ''))
+  );
+$$;
+
 create table if not exists public.gallery (
   id uuid primary key default gen_random_uuid(),
   title text not null,
@@ -90,6 +109,7 @@ alter table public.categories enable row level security;
 alter table public.products enable row level security;
 alter table public.gallery_items enable row level security;
 alter table public.site_settings enable row level security;
+alter table public.admin_users enable row level security;
 alter table public.gallery enable row level security;
 alter table public.orders enable row level security;
 
@@ -97,6 +117,8 @@ drop policy if exists "Public can read categories" on public.categories;
 drop policy if exists "Public can read products" on public.products;
 drop policy if exists "Public can read visible gallery items" on public.gallery_items;
 drop policy if exists "Public can read site settings" on public.site_settings;
+drop policy if exists "Authenticated admins can read admin users" on public.admin_users;
+drop policy if exists "Authenticated admins can manage admin users" on public.admin_users;
 drop policy if exists "Public can view visible gallery" on public.gallery;
 drop policy if exists "Authenticated users can manage categories" on public.categories;
 drop policy if exists "Authenticated users can manage products" on public.products;
@@ -117,46 +139,55 @@ using (true);
 
 create policy "Public can read visible gallery items"
 on public.gallery_items for select
-using (is_visible = true or auth.role() = 'authenticated');
+using (is_visible = true or public.is_admin());
 
 create policy "Public can read site settings"
 on public.site_settings for select
 using (true);
 
+create policy "Authenticated admins can read admin users"
+on public.admin_users for select
+using (public.is_admin());
+
+create policy "Authenticated admins can manage admin users"
+on public.admin_users for all
+using (public.is_admin())
+with check (public.is_admin());
+
 create policy "Public can view visible gallery"
 on public.gallery for select
-using (is_visible = true or auth.role() = 'authenticated');
+using (is_visible = true or public.is_admin());
 
 -- Authenticated admin can manage data.
 -- For v1, only create one trusted admin user in Supabase Auth.
 create policy "Authenticated users can manage categories"
 on public.categories for all
-using (auth.role() = 'authenticated')
-with check (auth.role() = 'authenticated');
+using (public.is_admin())
+with check (public.is_admin());
 
 create policy "Authenticated users can manage products"
 on public.products for all
-using (auth.role() = 'authenticated')
-with check (auth.role() = 'authenticated');
+using (public.is_admin())
+with check (public.is_admin());
 
 create policy "Authenticated users can manage gallery items"
 on public.gallery_items for all
-using (auth.role() = 'authenticated')
-with check (auth.role() = 'authenticated');
+using (public.is_admin())
+with check (public.is_admin());
 
 create policy "Authenticated users can manage site settings"
 on public.site_settings for all
-using (auth.role() = 'authenticated')
-with check (auth.role() = 'authenticated');
+using (public.is_admin())
+with check (public.is_admin());
 
 create policy "Admin can manage gallery"
 on public.gallery for all
-using (auth.role() = 'authenticated')
-with check (auth.role() = 'authenticated');
+using (public.is_admin())
+with check (public.is_admin());
 
 create policy "Authenticated users can read orders"
 on public.orders for select
-using (auth.role() = 'authenticated');
+using (public.is_admin());
 
 create policy "Anyone can create order inquiry"
 on public.orders for insert
@@ -177,16 +208,16 @@ using (bucket_id = 'product-media');
 
 create policy "Authenticated users can upload product media"
 on storage.objects for insert
-with check (bucket_id = 'product-media' and auth.role() = 'authenticated');
+with check (bucket_id = 'product-media' and public.is_admin());
 
 create policy "Authenticated users can update product media"
 on storage.objects for update
-using (bucket_id = 'product-media' and auth.role() = 'authenticated')
-with check (bucket_id = 'product-media' and auth.role() = 'authenticated');
+using (bucket_id = 'product-media' and public.is_admin())
+with check (bucket_id = 'product-media' and public.is_admin());
 
 create policy "Authenticated users can delete product media"
 on storage.objects for delete
-using (bucket_id = 'product-media' and auth.role() = 'authenticated');
+using (bucket_id = 'product-media' and public.is_admin());
 
 insert into public.categories (name, slug)
 values
@@ -200,3 +231,7 @@ on conflict (slug) do nothing;
 insert into public.site_settings (id)
 values ('about')
 on conflict (id) do nothing;
+
+insert into public.admin_users (email)
+values ('laxmigupta8888@gmail.com')
+on conflict (email) do nothing;

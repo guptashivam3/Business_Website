@@ -104,6 +104,11 @@
               <span>Payment and delivery details are shared on WhatsApp.</span>
             </div>
           </div>
+
+          <div class="pd-safety-note">
+            <strong>Safety note</strong>
+            <p>We never ask for OTPs, passwords, or bank login details. Only use the official WhatsApp button on this website.</p>
+          </div>
         </div>
       </div>
     </main>
@@ -610,6 +615,31 @@ async function loadProduct() {
   height: 7px;
   border-radius: 99px;
   background: #a85f33;
+}
+
+.pd-safety-note {
+  margin-top: 14px;
+  border: 1px solid #d7e8db;
+  border-radius: 16px;
+  padding: 14px;
+  background: #f0f8f2;
+}
+
+.pd-safety-note strong {
+  display: block;
+  margin-bottom: 4px;
+  color: #266b35;
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.pd-safety-note p {
+  margin: 0;
+  color: #3f6247;
+  font-size: 13px;
+  line-height: 1.55;
 }
 
 .image-viewer {
