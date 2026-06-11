@@ -66,8 +66,10 @@ const error = ref('')
 const showPw = ref(false)
 
 onMounted(async () => {
-  const { data } = await supabase.auth.getSession()
-  if (data.session) router.replace('/admin')
+  window.setTimeout(async () => {
+    const { data } = await supabase.auth.getSession()
+    if (data.session) router.replace('/admin')
+  }, 0)
 })
 
 async function login() {
