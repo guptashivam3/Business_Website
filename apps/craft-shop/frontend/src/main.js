@@ -20,10 +20,16 @@ app.directive('reveal', {
       ([entry]) => {
         if (!entry.isIntersecting) return
         el.classList.add('is-visible')
+        clearTimeout(fallback)
         observer.disconnect()
       },
-      { threshold: 0.14, rootMargin: '0px 0px -8% 0px' }
+      { threshold: 0.01, rootMargin: '0px 0px 18% 0px' }
     )
+
+    const fallback = setTimeout(() => {
+      el.classList.add('is-visible')
+      observer.disconnect()
+    }, 900)
 
     observer.observe(el)
   }

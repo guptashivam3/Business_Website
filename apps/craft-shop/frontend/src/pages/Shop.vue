@@ -98,7 +98,10 @@
               :to="`/product/${product.slug}`"
               class="featured-card"
             >
-              <img v-if="product.image_url" :src="product.image_url" :alt="product.name" />
+              <div class="featured-img-wrap">
+                <img v-if="product.image_url" :src="product.image_url" :alt="product.name" loading="eager" />
+                <span v-else>Image</span>
+              </div>
               <div>
                 <span>{{ categoryName(product) }}</span>
                 <h3>{{ product.name }}</h3>
@@ -248,7 +251,9 @@ const activeFeaturedIndex = ref(0)
 const activeProcessIndex = ref(0)
 let featuredTimer = null
 let processTimer = null
-const featuredPageSize = 4
+const isMobile = ref(false)
+
+const featuredPageSize = computed(() => (isMobile.value ? 1 : 4))
 
 const processSteps = [
   {
@@ -301,13 +306,20 @@ const featuredProducts = computed(() => {
 })
 
 const featuredPageCount = computed(() => {
-  return Math.max(1, Math.ceil(featuredProducts.value.length / featuredPageSize))
+  return Math.max(1, Math.ceil(featuredProducts.value.length / featuredPageSize.value))
 })
 
 const visibleFeaturedProducts = computed(() => {
-  const start = activeFeaturedIndex.value * featuredPageSize
-  return featuredProducts.value.slice(start, start + featuredPageSize)
+  const start = activeFeaturedIndex.value * featuredPageSize.value
+  return featuredProducts.value.slice(start, start + featuredPageSize.value)
 })
+
+function syncViewport() {
+  isMobile.value = window.matchMedia('(max-width: 700px)').matches
+  if (activeFeaturedIndex.value >= featuredPageCount.value) {
+    activeFeaturedIndex.value = 0
+  }
+}
 
 function nextFeaturedSlide() {
   activeFeaturedIndex.value = (activeFeaturedIndex.value + 1) % featuredPageCount.value
@@ -322,6 +334,8 @@ function whatsAppLink(message) {
 }
 
 onMounted(() => {
+  syncViewport()
+  window.addEventListener('resize', syncViewport)
   loadProducts()
   featuredTimer = setInterval(() => {
     if (featuredPageCount.value > 1) {
@@ -336,6 +350,7 @@ onMounted(() => {
 onUnmounted(() => {
   clearInterval(featuredTimer)
   clearInterval(processTimer)
+  window.removeEventListener('resize', syncViewport)
 })
 
 async function loadProducts() {
@@ -784,10 +799,26 @@ async function loadProducts() {
   box-shadow: 0 22px 54px rgba(65, 42, 24, 0.13);
 }
 
-.featured-card img {
+.featured-img-wrap {
+  position: relative;
+  overflow: hidden;
+  background: #f2e5d7;
+}
+
+.featured-img-wrap img {
   width: 100%;
+  height: 100%;
   aspect-ratio: 1 / 1;
   object-fit: cover;
+}
+
+.featured-img-wrap span {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: #79401f;
+  font-weight: 900;
 }
 
 .featured-card div {
@@ -1259,11 +1290,11 @@ async function loadProducts() {
   }
 
   .featured-row {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: 1fr;
   }
 
   .featured-slider {
-    padding-inline: 0;
+    padding: 0 0 42px;
   }
 
   .featured-arrow {
@@ -1272,11 +1303,41 @@ async function loadProducts() {
   }
 
   .featured-arrow.left {
-    left: 0;
+    left: 14px;
   }
 
   .featured-arrow.right {
-    right: 0;
+    right: 14px;
+  }
+
+  .featured-card {
+    grid-template-columns: 46% minmax(0, 1fr);
+    min-height: 210px;
+    border-radius: 24px;
+  }
+
+  .featured-img-wrap {
+    height: 100%;
+    min-height: 210px;
+  }
+
+  .featured-img-wrap img {
+    aspect-ratio: auto;
+  }
+
+  .featured-card div {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 18px;
+  }
+
+  .featured-card h3 {
+    font-size: 20px;
+  }
+
+  .featured-card p {
+    font-size: 18px;
   }
 
   .promise-section {
@@ -1327,11 +1388,14 @@ async function loadProducts() {
     font-size: 26px;
   }
 
-  .featured-row,
   .product-grid,
   .skeleton-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 12px;
+  }
+
+  .featured-row {
+    grid-template-columns: 1fr;
   }
 
   .product-card-body {
