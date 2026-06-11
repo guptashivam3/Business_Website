@@ -408,7 +408,17 @@ function whatsAppLink(message) {
 
 @media (max-width: 560px) {
   .about-hero {
-    padding: 38px 0 36px;
+    padding: 34px 0 34px;
+  }
+
+  .about-copy h1 {
+    font-size: clamp(42px, 13vw, 58px);
+    line-height: 1.02;
+  }
+
+  .about-lead {
+    font-size: 19px;
+    line-height: 1.65;
   }
 
   .about-actions {
@@ -416,8 +426,43 @@ function whatsAppLink(message) {
     flex-direction: column;
   }
 
+  .owner-card {
+    display: grid;
+    grid-template-columns: 42% 1fr;
+    border-radius: 22px;
+  }
+
   .owner-photo-placeholder {
-    min-height: 300px;
+    min-height: 220px;
+    padding: 16px;
+  }
+
+  .owner-photo-placeholder span {
+    width: 72px;
+    height: 72px;
+  }
+
+  .owner-photo-placeholder p {
+    display: none;
+  }
+
+  .owner-info {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 18px;
+  }
+
+  .owner-info h2 {
+    font-size: 28px;
+  }
+
+  .story-card {
+    padding: 20px;
+  }
+
+  .story-card h2 {
+    font-size: 32px;
   }
 }
 

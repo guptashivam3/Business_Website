@@ -1404,7 +1404,25 @@ onMounted(async () => {
 
 @media (max-width: 560px) {
   .admin-overview {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .overview-card {
+    min-height: 136px;
+    padding: 15px;
+  }
+
+  .overview-card span {
+    font-size: 10px;
+  }
+
+  .overview-card strong {
+    font-size: 34px;
+  }
+
+  .overview-card p {
+    font-size: 12px;
   }
 
   .admin-header-inner,
@@ -1421,6 +1439,99 @@ onMounted(async () => {
 
   .admin-btn {
     flex: 1;
+  }
+
+  .admin-body {
+    padding-top: 20px;
+  }
+
+  .tab-title {
+    font-size: 40px;
+    line-height: 1.05;
+  }
+
+  .products-table {
+    border-radius: 20px;
+    background: transparent;
+    box-shadow: none;
+    border: 0;
+    display: grid;
+    gap: 12px;
+  }
+
+  .products-row {
+    border: 1px solid #eadfd2;
+    border-radius: 18px;
+    padding: 14px;
+    background: #ffffff;
+    box-shadow: 0 12px 30px rgba(65, 42, 24, 0.06);
+  }
+
+  .products-row-info {
+    align-items: flex-start;
+  }
+
+  .products-row-img-wrap {
+    width: 64px;
+    height: 64px;
+  }
+
+  .products-row-name {
+    font-size: 20px;
+    line-height: 1.18;
+  }
+
+  .products-row-price {
+    font-size: 22px;
+  }
+
+  .products-row-status {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .products-row-actions {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .products-row-actions .admin-btn {
+    min-height: 44px;
+    padding: 8px;
+    font-size: 12px;
+    white-space: normal;
+  }
+
+  .gallery-admin-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .gallery-admin-card {
+    border-radius: 16px;
+  }
+
+  .gallery-admin-body {
+    padding: 10px;
+  }
+
+  .gallery-admin-name {
+    font-size: 14px;
+    line-height: 1.25;
+  }
+
+  .gallery-admin-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 7px;
+    padding: 10px;
+  }
+
+  .gallery-admin-actions .admin-btn {
+    min-height: 36px;
+    font-size: 12px;
   }
 
   .modal-overlay {

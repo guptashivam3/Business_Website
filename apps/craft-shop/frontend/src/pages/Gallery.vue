@@ -7,7 +7,7 @@
           <span class="gallery-nav-brand-sub">Handmade with love</span>
         </RouterLink>
         <div class="gallery-nav-links">
-          <RouterLink to="/about" class="gallery-btn outline small">About</RouterLink>
+          <RouterLink to="/about" class="gallery-btn outline small">About Us</RouterLink>
           <RouterLink to="/" class="gallery-btn outline small">Back to Shop</RouterLink>
         </div>
       </div>

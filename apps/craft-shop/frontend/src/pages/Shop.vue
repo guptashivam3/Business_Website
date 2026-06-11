@@ -7,7 +7,7 @@
           <span class="nav-brand-sub">Handmade with love</span>
         </RouterLink>
         <div class="nav-links">
-          <RouterLink to="/about" class="shop-btn ghost small">About</RouterLink>
+          <RouterLink to="/about" class="shop-btn ghost small">About Us</RouterLink>
           <RouterLink to="/gallery" class="shop-btn ghost small">Gallery</RouterLink>
           <RouterLink to="/admin/login" class="admin-icon-link" aria-label="Admin login" title="Admin login">Admin</RouterLink>
         </div>
@@ -221,7 +221,7 @@
           <span class="footer-tagline">Handmade with love, delivered with care.</span>
         </div>
         <div class="footer-links">
-          <RouterLink to="/about">About</RouterLink>
+          <RouterLink to="/about">About Us</RouterLink>
           <RouterLink to="/gallery">Gallery</RouterLink>
           <a :href="whatsAppLink('Hi!')" target="_blank" rel="noopener">WhatsApp</a>
         </div>
