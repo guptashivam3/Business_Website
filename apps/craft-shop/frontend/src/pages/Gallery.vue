@@ -21,7 +21,7 @@
       </div>
     </nav>
 
-    <section class="gallery-hero container">
+    <section class="gallery-hero container" v-reveal>
       <p class="section-label">Our Work</p>
       <h1 class="section-title">Inspiration Gallery</h1>
       <p class="section-sub">
@@ -29,7 +29,7 @@
       </p>
     </section>
 
-    <main class="gallery-body container">
+    <main class="gallery-body container" v-reveal="{ delay: 90 }">
       <div v-if="loading" class="loading-wrap">
         <div class="spinner"></div>
         <span>Loading gallery...</span>
@@ -43,7 +43,7 @@
       </div>
 
       <div v-else class="gallery-grid">
-        <article v-for="item in items" :key="item.id" class="gallery-item" @click="openLightbox(item)">
+        <article v-for="item in items" :key="item.id" class="gallery-item" v-reveal @click="openLightbox(item)">
           <div class="gallery-img-wrap">
             <img :src="item.image_url" :alt="item.title" class="gallery-img" loading="lazy" />
             <div class="gallery-overlay">
@@ -74,7 +74,7 @@
       </div>
     </div>
 
-    <section class="gallery-cta container">
+    <section class="gallery-cta container" v-reveal>
       <div class="gallery-cta-card">
         <p class="section-label">Liked what you saw?</p>
         <h2 class="gallery-cta-title">We can make it for you</h2>

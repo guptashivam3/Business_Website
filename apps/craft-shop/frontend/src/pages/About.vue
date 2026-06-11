@@ -22,7 +22,7 @@
     </nav>
 
     <main>
-      <section class="about-hero">
+      <section class="about-hero" v-reveal>
         <div class="container about-hero-inner">
           <div class="about-copy">
             <p class="about-label">Meet the maker</p>
@@ -53,7 +53,7 @@
         </div>
       </section>
 
-      <section class="about-story container">
+      <section class="about-story container" v-reveal="{ delay: 100 }">
         <div class="story-card main-story">
           <p class="about-label">What we do</p>
           <h2>Made for moments that deserve care</h2>
@@ -83,7 +83,7 @@
         </div>
       </section>
 
-      <section class="contact-section">
+      <section class="contact-section" v-reveal>
         <div class="container contact-inner">
           <div>
             <p class="about-label">Contact</p>

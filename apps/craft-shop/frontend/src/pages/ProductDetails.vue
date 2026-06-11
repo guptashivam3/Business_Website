@@ -33,7 +33,7 @@
       <RouterLink to="/" class="pd-btn">Back to Shop</RouterLink>
     </div>
 
-    <main v-else class="pd-body container">
+    <main v-else class="pd-body container" v-reveal>
       <div class="breadcrumb">
         <RouterLink to="/">Shop</RouterLink>
         <span>/</span>
@@ -43,7 +43,10 @@
       <div class="pd-layout">
         <div class="pd-media">
           <div class="pd-img-wrap">
-            <img v-if="product.image_url" :src="product.image_url" :alt="product.name" class="pd-img" />
+            <button v-if="product.image_url" class="pd-img-button" type="button" @click="imageOpen = true">
+              <img :src="product.image_url" :alt="product.name" class="pd-img" />
+              <span>View larger</span>
+            </button>
             <div v-else class="pd-img-placeholder">Image</div>
           </div>
 
@@ -112,6 +115,11 @@
         </div>
       </div>
     </main>
+
+    <div v-if="imageOpen && product?.image_url" class="image-viewer" @click.self="imageOpen = false">
+      <button class="image-viewer-close" type="button" @click="imageOpen = false">Close</button>
+      <img :src="product.image_url" :alt="product.name" />
+    </div>
   </div>
 </template>
 
@@ -129,6 +137,7 @@ const showUpiPayment = false
 const product = ref(null)
 const loading = ref(true)
 const copied = ref(false)
+const imageOpen = ref(false)
 
 const waOrderLink = computed(() => {
   const message = `Hi! I would like to order:\n\n${product.value?.name} - Rs ${product.value?.price}\n\nPlease confirm availability and delivery details.`
@@ -382,6 +391,28 @@ async function loadProduct() {
   object-fit: cover;
 }
 
+.pd-img-button {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  padding: 0;
+  background: transparent;
+}
+
+.pd-img-button span {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  border-radius: 999px;
+  padding: 9px 13px;
+  background: rgba(255, 253, 248, 0.9);
+  color: #261f1a;
+  font-size: 13px;
+  font-weight: 900;
+  box-shadow: 0 12px 28px rgba(65, 42, 24, 0.14);
+}
+
 .pd-img-placeholder {
   display: grid;
   place-items: center;
@@ -631,6 +662,50 @@ async function loadProduct() {
   height: 7px;
   border-radius: 99px;
   background: #a85f33;
+}
+
+.image-viewer {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  display: grid;
+  place-items: center;
+  padding: 26px;
+  background: rgba(18, 15, 12, 0.84);
+  backdrop-filter: blur(16px);
+}
+
+.image-viewer img {
+  max-width: min(100%, 980px);
+  max-height: 86vh;
+  border-radius: 22px;
+  object-fit: contain;
+  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.38);
+  animation: imageZoom 240ms ease both;
+}
+
+.image-viewer-close {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 999px;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  font-weight: 900;
+}
+
+@keyframes imageZoom {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 @media (max-width: 820px) {

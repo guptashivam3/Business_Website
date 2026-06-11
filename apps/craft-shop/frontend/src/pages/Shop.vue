@@ -1,14 +1,5 @@
 <template>
   <div class="shop-page">
-    <div class="announcement-bar">
-      <div class="announcement-track">
-        <span>Custom handmade orders accepted on WhatsApp</span>
-        <span>Festive hampers, chocolate garlands, potlis and gift trays</span>
-        <span>Made personally by Laxmi Gupta</span>
-        <span>Share your occasion, budget and color theme</span>
-      </div>
-    </div>
-
     <nav class="shop-nav">
       <div class="container nav-inner">
         <RouterLink to="/" class="nav-brand">
@@ -23,7 +14,7 @@
       </div>
     </nav>
 
-    <section class="hero">
+    <section class="hero" v-reveal>
       <div class="container hero-inner">
         <div class="hero-text">
           <p class="section-label">Handcrafted in India</p>
@@ -52,38 +43,10 @@
             <RouterLink to="/gallery" class="shop-btn outline large">View Gallery</RouterLink>
           </div>
         </div>
-
-        <div v-if="heroPrimaryProduct" class="hero-showcase">
-          <Transition name="hero-slide" mode="out-in">
-            <RouterLink :key="heroPrimaryProduct.id" :to="`/product/${heroPrimaryProduct.slug}`" class="hero-feature-card">
-              <div class="hero-feature-img-wrap">
-                <img :src="heroPrimaryProduct.image_url" :alt="heroPrimaryProduct.name" />
-              </div>
-              <div class="hero-feature-info">
-                <span>{{ categoryName(heroPrimaryProduct) }}</span>
-                <h2>{{ heroPrimaryProduct.name }}</h2>
-                <p v-if="heroPrimaryProduct.description">{{ heroPrimaryProduct.description }}</p>
-                <strong>Rs {{ Number(heroPrimaryProduct.price).toFixed(2) }}</strong>
-                <small>View product details</small>
-              </div>
-            </RouterLink>
-          </Transition>
-
-          <div v-if="heroSlides.length > 1" class="hero-dots" aria-label="Featured product slides">
-            <button
-              v-for="(product, index) in heroSlides"
-              :key="product.id"
-              type="button"
-              :class="{ active: activeHeroIndex === index }"
-              :aria-label="`Show ${product.name}`"
-              @click="activeHeroIndex = index"
-            ></button>
-          </div>
-        </div>
       </div>
     </section>
 
-    <section class="promise-section container">
+    <section class="promise-section container" v-reveal="{ delay: 80 }">
       <div class="promise-card primary">
         <p class="section-label">Made personally</p>
         <h2>Thoughtful gifts without the back-and-forth confusion.</h2>
@@ -114,7 +77,7 @@
       </div>
     </section>
 
-    <section v-if="featuredProducts.length" class="featured-section container">
+    <section v-if="featuredProducts.length" class="featured-section container" v-reveal="{ delay: 120 }">
       <div class="shop-header">
         <div>
           <p class="section-label">Customer favourites</p>
@@ -123,24 +86,44 @@
         <RouterLink to="/gallery" class="shop-btn outline small">See Inspiration</RouterLink>
       </div>
 
-      <div class="featured-row">
-        <RouterLink
-          v-for="product in featuredProducts.slice(0, 4)"
-          :key="product.id"
-          :to="`/product/${product.slug}`"
-          class="featured-card"
-        >
-          <img v-if="product.image_url" :src="product.image_url" :alt="product.name" />
-          <div>
-            <span>{{ categoryName(product) }}</span>
-            <h3>{{ product.name }}</h3>
-            <p>Rs {{ Number(product.price).toFixed(2) }}</p>
+      <div class="featured-slider">
+        <button class="featured-arrow left" type="button" aria-label="Previous featured products" @click="previousFeaturedSlide">
+          Prev
+        </button>
+        <Transition name="featured-slide" mode="out-in">
+          <div :key="activeFeaturedIndex" class="featured-row">
+            <RouterLink
+              v-for="product in visibleFeaturedProducts"
+              :key="product.id"
+              :to="`/product/${product.slug}`"
+              class="featured-card"
+            >
+              <img v-if="product.image_url" :src="product.image_url" :alt="product.name" />
+              <div>
+                <span>{{ categoryName(product) }}</span>
+                <h3>{{ product.name }}</h3>
+                <p>Rs {{ Number(product.price).toFixed(2) }}</p>
+              </div>
+            </RouterLink>
           </div>
-        </RouterLink>
+        </Transition>
+        <button class="featured-arrow right" type="button" aria-label="Next featured products" @click="nextFeaturedSlide">
+          Next
+        </button>
+        <div v-if="featuredPageCount > 1" class="featured-dots" aria-label="Featured product slides">
+          <button
+            v-for="index in featuredPageCount"
+            :key="index"
+            type="button"
+            :class="{ active: activeFeaturedIndex === index - 1 }"
+            :aria-label="`Show featured slide ${index}`"
+            @click="activeFeaturedIndex = index - 1"
+          ></button>
+        </div>
       </div>
     </section>
 
-    <section class="shop-section container">
+    <section class="shop-section container" v-reveal="{ delay: 140 }">
       <div class="shop-header">
         <div>
           <p class="section-label">Our Collection</p>
@@ -189,7 +172,7 @@
       </div>
 
       <div v-else class="product-grid">
-        <RouterLink v-for="product in filteredProducts" :key="product.id" :to="`/product/${product.slug}`" class="product-card">
+        <RouterLink v-for="product in filteredProducts" :key="product.id" :to="`/product/${product.slug}`" class="product-card" v-reveal>
           <div class="product-card-img-wrap">
             <img v-if="product.image_url" :src="product.image_url" :alt="product.name" class="product-card-img" loading="lazy" />
             <div v-else class="product-card-placeholder">Image</div>
@@ -211,7 +194,7 @@
       </div>
     </section>
 
-    <section class="cta-strip">
+    <section class="cta-strip" v-reveal>
       <div class="container cta-strip-inner">
         <div>
           <h3>Have a custom order idea?</h3>
@@ -261,10 +244,11 @@ const activeCategory = ref('All')
 const searchQuery = ref('')
 const loading = ref(true)
 const currentYear = new Date().getFullYear()
-const activeHeroIndex = ref(0)
+const activeFeaturedIndex = ref(0)
 const activeProcessIndex = ref(0)
-let heroTimer = null
+let featuredTimer = null
 let processTimer = null
+const featuredPageSize = 4
 
 const processSteps = [
   {
@@ -316,15 +300,22 @@ const featuredProducts = computed(() => {
   return products.value.filter((product) => product.is_featured && product.is_available)
 })
 
-const heroSlides = computed(() => {
-  const source = featuredProducts.value.length ? featuredProducts.value : products.value
-  return source.filter((product) => product.image_url).slice(0, 5)
+const featuredPageCount = computed(() => {
+  return Math.max(1, Math.ceil(featuredProducts.value.length / featuredPageSize))
 })
 
-const heroPrimaryProduct = computed(() => {
-  if (!heroSlides.value.length) return null
-  return heroSlides.value[activeHeroIndex.value % heroSlides.value.length]
+const visibleFeaturedProducts = computed(() => {
+  const start = activeFeaturedIndex.value * featuredPageSize
+  return featuredProducts.value.slice(start, start + featuredPageSize)
 })
+
+function nextFeaturedSlide() {
+  activeFeaturedIndex.value = (activeFeaturedIndex.value + 1) % featuredPageCount.value
+}
+
+function previousFeaturedSlide() {
+  activeFeaturedIndex.value = (activeFeaturedIndex.value - 1 + featuredPageCount.value) % featuredPageCount.value
+}
 
 function whatsAppLink(message) {
   return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`
@@ -332,18 +323,18 @@ function whatsAppLink(message) {
 
 onMounted(() => {
   loadProducts()
-  heroTimer = setInterval(() => {
-    if (heroSlides.value.length > 1) {
-      activeHeroIndex.value = (activeHeroIndex.value + 1) % heroSlides.value.length
+  featuredTimer = setInterval(() => {
+    if (featuredPageCount.value > 1) {
+      nextFeaturedSlide()
     }
-  }, 4200)
+  }, 4600)
   processTimer = setInterval(() => {
     activeProcessIndex.value = (activeProcessIndex.value + 1) % processSteps.length
   }, 3600)
 })
 
 onUnmounted(() => {
-  clearInterval(heroTimer)
+  clearInterval(featuredTimer)
   clearInterval(processTimer)
 })
 
@@ -367,52 +358,6 @@ async function loadProducts() {
   background:
     radial-gradient(circle at 12% 8%, rgba(184, 92, 56, 0.12), transparent 28rem),
     linear-gradient(180deg, #fffaf4 0%, #f8efe5 50%, #fffaf4 100%);
-}
-
-.announcement-bar {
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  min-height: 38px;
-  background: #261f1a;
-  color: #f8efe5;
-  font-size: 13px;
-  font-weight: 800;
-  white-space: nowrap;
-}
-
-.announcement-track {
-  display: inline-flex;
-  gap: 42px;
-  min-width: max-content;
-  padding: 8px 0;
-  animation: marquee 26s linear infinite;
-}
-
-.announcement-track span {
-  position: relative;
-}
-
-.announcement-track span::after {
-  content: "";
-  position: absolute;
-  top: 50%;
-  right: -24px;
-  width: 5px;
-  height: 5px;
-  border-radius: 99px;
-  background: #c9a84c;
-  transform: translateY(-50%);
-}
-
-@keyframes marquee {
-  from {
-    transform: translateX(100vw);
-  }
-
-  to {
-    transform: translateX(-100%);
-  }
 }
 
 .shop-nav {
@@ -551,21 +496,16 @@ async function loadProducts() {
 
 .hero-inner {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(360px, 460px);
+  grid-template-columns: minmax(0, 760px);
   gap: 48px;
   align-items: center;
 }
 
 .hero-text,
-.hero-showcase,
 .promise-card,
 .featured-card,
 .product-card {
   animation: riseIn 560ms ease both;
-}
-
-.hero-showcase {
-  animation-delay: 90ms;
 }
 
 @keyframes riseIn {
@@ -639,124 +579,33 @@ async function loadProducts() {
   font-weight: 800;
 }
 
-.hero-showcase {
-  position: relative;
-  width: 100%;
-}
-
-.hero-feature-card {
-  display: grid;
-  grid-template-columns: minmax(0, 1.05fr) minmax(220px, 0.95fr);
-  overflow: hidden;
-  border: 1px solid rgba(234, 223, 210, 0.92);
-  border-radius: 28px;
-  background: rgba(255, 253, 248, 0.92);
-  box-shadow: 0 22px 58px rgba(65, 42, 24, 0.14);
-  transition: transform 180ms ease, box-shadow 180ms ease;
-}
-
-.hero-feature-card:hover {
-  box-shadow: 0 28px 70px rgba(65, 42, 24, 0.18);
-  transform: translateY(-3px);
-}
-
-.hero-slide-enter-active,
-.hero-slide-leave-active,
+.featured-slide-enter-active,
+.featured-slide-leave-active,
 .process-slide-enter-active,
 .process-slide-leave-active {
   transition: opacity 360ms ease, transform 360ms ease;
 }
 
-.hero-slide-enter-from,
+.featured-slide-enter-from,
 .process-slide-enter-from {
   opacity: 0;
   transform: translateX(24px);
 }
 
-.hero-slide-leave-to,
+.featured-slide-leave-to,
 .process-slide-leave-to {
   opacity: 0;
   transform: translateX(-24px);
 }
 
-.hero-feature-img-wrap {
-  min-height: 410px;
-  overflow: hidden;
-  background: #f2e5d7;
-}
-
-.hero-feature-img-wrap img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.hero-feature-info {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  min-height: 410px;
-  padding: 34px;
-}
-
-.hero-feature-info span {
-  display: block;
-  margin-bottom: 12px;
-  color: #79401f;
-  font-size: 12px;
-  font-weight: 900;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-.hero-feature-info h2 {
-  margin: 0 0 12px;
-  color: #241f1a;
-  font-size: clamp(28px, 4vw, 44px);
-  line-height: 1.15;
-}
-
-.hero-feature-info p {
-  display: -webkit-box;
-  overflow: hidden;
-  margin: 0 0 18px;
-  color: #6f6258;
-  font-size: 15px;
-  line-height: 1.65;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
-}
-
-.hero-feature-info strong {
-  color: #a85f33;
-  font-size: 24px;
-  font-weight: 900;
-}
-
-.hero-feature-info small {
-  width: max-content;
-  margin-top: 18px;
-  border-bottom: 2px solid #a85f33;
-  color: #261f1a;
-  font-size: 13px;
-  font-weight: 900;
-}
-
-.hero-dots,
+.featured-dots,
 .process-dots {
   display: flex;
   justify-content: center;
   gap: 8px;
 }
 
-.hero-dots {
-  position: absolute;
-  right: 0;
-  bottom: -26px;
-  left: 0;
-}
-
-.hero-dots button,
+.featured-dots button,
 .process-dots button {
   width: 8px;
   height: 8px;
@@ -767,7 +616,7 @@ async function loadProducts() {
   transition: width 180ms ease, background 180ms ease;
 }
 
-.hero-dots button.active,
+.featured-dots button.active,
 .process-dots button.active {
   width: 24px;
   background: #a85f33;
@@ -863,10 +712,61 @@ async function loadProducts() {
   padding: 46px 0 8px;
 }
 
+.featured-slider {
+  position: relative;
+  padding: 0 44px 34px;
+}
+
 .featured-row {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 16px;
+}
+
+.featured-dots {
+  margin-top: 18px;
+}
+
+.featured-arrow {
+  position: absolute;
+  top: 38%;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  overflow: hidden;
+  border: 1px solid #d8c8b8;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.9);
+  color: transparent;
+  cursor: pointer;
+  font-size: 0;
+  box-shadow: 0 12px 26px rgba(65, 42, 24, 0.1);
+}
+
+.featured-arrow::before {
+  content: "";
+  width: 10px;
+  height: 10px;
+  border-top: 2px solid #79401f;
+  border-left: 2px solid #79401f;
+}
+
+.featured-arrow.left {
+  left: 0;
+}
+
+.featured-arrow.left::before {
+  transform: rotate(-45deg) translate(1px, 1px);
+}
+
+.featured-arrow.right {
+  right: 0;
+}
+
+.featured-arrow.right::before {
+  transform: rotate(135deg) translate(1px, 1px);
 }
 
 .featured-card {
@@ -1358,25 +1258,25 @@ async function loadProducts() {
     grid-template-columns: 1fr;
   }
 
-  .hero-showcase {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .hero-feature-card {
-    grid-template-columns: 1fr;
-  }
-
-  .hero-feature-img-wrap,
-  .hero-feature-info {
-    min-height: auto;
-  }
-
-  .hero-feature-img-wrap {
-    aspect-ratio: 4 / 3;
-  }
-
   .featured-row {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .featured-slider {
+    padding-inline: 0;
+  }
+
+  .featured-arrow {
+    top: auto;
+    bottom: -2px;
+  }
+
+  .featured-arrow.left {
+    left: 0;
+  }
+
+  .featured-arrow.right {
+    right: 0;
   }
 
   .promise-section {
@@ -1385,10 +1285,6 @@ async function loadProducts() {
 }
 
 @media (max-width: 600px) {
-  .announcement-bar {
-    font-size: 12px;
-  }
-
   .hero {
     padding-top: 36px;
   }
@@ -1410,22 +1306,6 @@ async function loadProducts() {
 
   .hero-stats span {
     font-size: 10px;
-  }
-
-  .hero-feature-card {
-    border-radius: 20px;
-  }
-
-  .hero-feature-info {
-    padding: 20px;
-  }
-
-  .hero-feature-info h2 {
-    font-size: 24px;
-  }
-
-  .hero-dots {
-    bottom: -22px;
   }
 
   .promise-section {
@@ -1481,9 +1361,7 @@ async function loadProducts() {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .announcement-track,
   .hero-text,
-  .hero-showcase,
   .promise-card,
   .process-panel,
   .featured-card,
@@ -1493,8 +1371,8 @@ async function loadProducts() {
     animation: none;
   }
 
-  .hero-slide-enter-active,
-  .hero-slide-leave-active,
+  .featured-slide-enter-active,
+  .featured-slide-leave-active,
   .process-slide-enter-active,
   .process-slide-leave-active {
     transition: none;
@@ -1502,8 +1380,7 @@ async function loadProducts() {
 
   .shop-btn,
   .product-card,
-  .featured-card,
-  .hero-feature-card {
+  .featured-card {
     transition: none;
   }
 }

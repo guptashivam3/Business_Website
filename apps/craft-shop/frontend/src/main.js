@@ -3,4 +3,30 @@ import App from './App.vue'
 import router from './router'
 import './styles/main.css'
 
-createApp(App).use(router).mount('#app')
+const app = createApp(App)
+
+app.directive('reveal', {
+  mounted(el, binding) {
+    const delay = binding.value?.delay || 0
+    el.classList.add('reveal')
+    el.style.setProperty('--reveal-delay', `${delay}ms`)
+
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      el.classList.add('is-visible')
+      return
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting) return
+        el.classList.add('is-visible')
+        observer.disconnect()
+      },
+      { threshold: 0.14, rootMargin: '0px 0px -8% 0px' }
+    )
+
+    observer.observe(el)
+  }
+})
+
+app.use(router).mount('#app')

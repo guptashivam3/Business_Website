@@ -1,6 +1,6 @@
 <template>
   <div class="login-page">
-    <div class="login-shell">
+    <div class="login-shell" v-reveal>
       <aside class="login-panel">
         <p class="login-panel-kicker">Owner workspace</p>
         <h2>Manage products, gallery, and availability in one focused place.</h2>

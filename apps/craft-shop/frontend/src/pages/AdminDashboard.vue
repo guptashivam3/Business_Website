@@ -17,7 +17,7 @@
     </header>
 
     <main class="admin-body container">
-      <section class="admin-overview">
+      <section class="admin-overview" v-reveal>
         <div class="overview-card">
           <span>Total Products</span>
           <strong>{{ products.length }}</strong>
@@ -49,7 +49,7 @@
         </button>
       </div>
 
-      <section v-if="tab === 'products'" class="tab-content">
+      <section v-if="tab === 'products'" class="tab-content" v-reveal="{ delay: 80 }">
         <div class="tab-header">
           <div>
             <h2 class="tab-title">Manage Products</h2>
@@ -126,7 +126,7 @@
         </div>
       </section>
 
-      <section v-if="tab === 'gallery'" class="tab-content">
+      <section v-if="tab === 'gallery'" class="tab-content" v-reveal="{ delay: 80 }">
         <div class="tab-header">
           <div>
             <h2 class="tab-title">Manage Gallery</h2>
