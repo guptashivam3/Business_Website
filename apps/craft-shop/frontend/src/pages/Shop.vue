@@ -7,6 +7,7 @@
           <span class="nav-brand-sub">Handmade with love</span>
         </RouterLink>
         <div class="nav-links">
+          <RouterLink to="/about" class="shop-btn ghost small">About</RouterLink>
           <RouterLink to="/gallery" class="shop-btn ghost small">Gallery</RouterLink>
           <RouterLink to="/admin/login" class="shop-btn outline small">Admin</RouterLink>
         </div>
@@ -43,38 +44,26 @@
           </div>
         </div>
 
-        <div class="hero-showcase">
-          <RouterLink
-            v-for="(product, index) in heroShowcaseProducts"
-            :key="product.id"
-            :to="`/product/${product.slug}`"
-            class="hero-float-card"
-            :class="`card-${index + 1}`"
-          >
-            <img v-if="product.image_url" :src="product.image_url" :alt="product.name" />
-            <div class="hero-float-info">
-              <span>{{ product.category || 'Handmade' }}</span>
-              <strong>{{ product.name }}</strong>
+        <div v-if="heroPrimaryProduct" class="hero-showcase">
+          <RouterLink :to="`/product/${heroPrimaryProduct.slug}`" class="hero-main-card">
+            <img :src="heroPrimaryProduct.image_url" :alt="heroPrimaryProduct.name" />
+            <div class="hero-main-info">
+              <span>{{ categoryName(heroPrimaryProduct) }}</span>
+              <strong>{{ heroPrimaryProduct.name }}</strong>
+              <p>Rs {{ Number(heroPrimaryProduct.price).toFixed(2) }}</p>
             </div>
           </RouterLink>
 
-          <div class="hero-order-card">
-            <p class="hero-order-label">Easy ordering</p>
-            <h2>Choose, customise, confirm.</h2>
-            <div class="hero-order-steps">
-              <div>
-                <span>01</span>
-                <p>Pick a ready design or share a similar reference.</p>
-              </div>
-              <div>
-                <span>02</span>
-                <p>Confirm color, size, packing and delivery details.</p>
-              </div>
-              <div>
-                <span>03</span>
-                <p>Place the final order directly with the owner on WhatsApp.</p>
-              </div>
-            </div>
+          <div class="hero-mini-stack">
+            <RouterLink
+              v-for="product in heroSecondaryProducts"
+              :key="product.id"
+              :to="`/product/${product.slug}`"
+              class="hero-mini-card"
+            >
+              <img :src="product.image_url" :alt="product.name" />
+              <span>{{ product.name }}</span>
+            </RouterLink>
           </div>
         </div>
       </div>
@@ -98,7 +87,7 @@
         >
           <img v-if="product.image_url" :src="product.image_url" :alt="product.name" />
           <div>
-            <span>{{ product.category || 'Handmade' }}</span>
+            <span>{{ categoryName(product) }}</span>
             <h3>{{ product.name }}</h3>
             <p>Rs {{ Number(product.price).toFixed(2) }}</p>
           </div>
@@ -161,7 +150,7 @@
             </div>
           </div>
           <div class="product-card-body">
-            <p v-if="product.category" class="product-card-cat">{{ product.category }}</p>
+            <p class="product-card-cat">{{ categoryName(product) }}</p>
             <h3 class="product-card-name">{{ product.name }}</h3>
             <p v-if="product.description" class="product-card-desc">{{ product.description }}</p>
             <div class="product-card-footer">
@@ -197,6 +186,7 @@
           <span class="footer-tagline">Handmade with love, delivered with care.</span>
         </div>
         <div class="footer-links">
+          <RouterLink to="/about">About</RouterLink>
           <RouterLink to="/gallery">Gallery</RouterLink>
           <a :href="whatsAppLink('Hi!')" target="_blank" rel="noopener">WhatsApp</a>
         </div>
@@ -223,9 +213,13 @@ const searchQuery = ref('')
 const loading = ref(true)
 const currentYear = new Date().getFullYear()
 
+function categoryName(product) {
+  return product.category || 'Gifts'
+}
+
 const categoryOptions = computed(() => {
   const counts = products.value.reduce((acc, product) => {
-    const name = product.category || 'Other'
+    const name = categoryName(product)
     acc[name] = (acc[name] || 0) + 1
     return acc
   }, {})
@@ -240,8 +234,9 @@ const filteredProducts = computed(() => {
   const query = searchQuery.value.toLowerCase()
 
   return products.value.filter((product) => {
-    const matchesCategory = activeCategory.value === 'All' || product.category === activeCategory.value
-    const searchable = `${product.name} ${product.category || ''} ${product.description || ''}`.toLowerCase()
+    const category = categoryName(product)
+    const matchesCategory = activeCategory.value === 'All' || category === activeCategory.value
+    const searchable = `${product.name} ${category} ${product.description || ''}`.toLowerCase()
     return matchesCategory && (!query || searchable.includes(query))
   })
 })
@@ -254,6 +249,9 @@ const heroShowcaseProducts = computed(() => {
   const source = featuredProducts.value.length ? featuredProducts.value : products.value
   return source.filter((product) => product.image_url).slice(0, 3)
 })
+
+const heroPrimaryProduct = computed(() => heroShowcaseProducts.value[0] || null)
+const heroSecondaryProducts = computed(() => heroShowcaseProducts.value.slice(1, 3))
 
 function whatsAppLink(message) {
   return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`
@@ -455,153 +453,103 @@ async function loadProducts() {
 }
 
 .hero-showcase {
-  position: relative;
-  min-height: 520px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 122px;
+  gap: 14px;
+  align-items: stretch;
 }
 
-.hero-float-card {
-  position: absolute;
+.hero-main-card,
+.hero-mini-card {
+  position: relative;
   overflow: hidden;
   border: 1px solid rgba(234, 223, 210, 0.92);
   border-radius: 24px;
   background: #ffffff;
-  box-shadow: 0 22px 58px rgba(65, 42, 24, 0.16);
+  box-shadow: 0 22px 58px rgba(65, 42, 24, 0.14);
   transition: transform 180ms ease, box-shadow 180ms ease;
 }
 
-.hero-float-card:hover {
-  box-shadow: 0 28px 70px rgba(65, 42, 24, 0.2);
-  transform: translateY(-4px) rotate(0deg);
+.hero-main-card:hover,
+.hero-mini-card:hover {
+  box-shadow: 0 28px 70px rgba(65, 42, 24, 0.18);
+  transform: translateY(-3px);
 }
 
-.hero-float-card img {
+.hero-main-card img,
+.hero-mini-card img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-.hero-float-info {
-  position: absolute;
-  right: 12px;
-  bottom: 12px;
-  left: 12px;
-  padding: 10px;
-  border-radius: 16px;
-  background: rgba(255, 253, 248, 0.88);
-  backdrop-filter: blur(12px);
+.hero-main-card {
+  min-height: 470px;
 }
 
-.hero-float-info span {
+.hero-main-info {
+  position: absolute;
+  right: 18px;
+  bottom: 18px;
+  left: 18px;
+  padding: 16px;
+  border-radius: 18px;
+  background: rgba(255, 253, 248, 0.9);
+  box-shadow: 0 18px 42px rgba(65, 42, 24, 0.16);
+  backdrop-filter: blur(14px);
+}
+
+.hero-main-info span {
   display: block;
   color: #79401f;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 900;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
-.hero-float-info strong {
+.hero-main-info strong {
   display: -webkit-box;
   overflow: hidden;
   color: #241f1a;
-  font-size: 13px;
-  line-height: 1.25;
+  margin-top: 4px;
+  font-size: 22px;
+  line-height: 1.15;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
 }
 
-.hero-float-card.card-1 {
-  top: 0;
-  left: 18px;
-  width: 58%;
-  aspect-ratio: 4 / 5;
-  transform: rotate(-4deg);
+.hero-main-info p {
+  margin: 8px 0 0;
+  color: #a85f33;
+  font-weight: 900;
 }
 
-.hero-float-card.card-2 {
-  top: 54px;
-  right: 0;
-  width: 44%;
-  aspect-ratio: 1 / 1.18;
-  transform: rotate(5deg);
-  z-index: 2;
+.hero-mini-stack {
+  display: grid;
+  gap: 14px;
 }
 
-.hero-float-card.card-3 {
-  right: 68px;
-  bottom: 0;
-  width: 48%;
-  aspect-ratio: 1 / 1;
-  transform: rotate(-2deg);
-  z-index: 3;
+.hero-mini-card {
+  min-height: 0;
 }
 
-.hero-order-card {
+.hero-mini-card span {
   position: absolute;
-  right: 0;
-  bottom: 24px;
-  left: 0;
-  z-index: 4;
-  display: grid;
-  gap: 12px;
-  width: min(330px, 82%);
-  margin: 0 auto;
-  padding: 18px;
-  border: 1px solid rgba(234, 223, 210, 0.9);
-  border-radius: 22px;
-  background: rgba(255, 253, 248, 0.9);
-  box-shadow: 0 20px 56px rgba(65, 42, 24, 0.16);
-  backdrop-filter: blur(14px);
-}
-
-.hero-order-label {
-  margin: 0;
-  color: #79401f;
-  font-size: 12px;
+  right: 8px;
+  bottom: 8px;
+  left: 8px;
+  display: -webkit-box;
+  overflow: hidden;
+  border-radius: 12px;
+  padding: 8px;
+  background: rgba(255, 253, 248, 0.88);
+  color: #261f1a;
+  font-size: 11px;
   font-weight: 900;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-.hero-order-card h2 {
-  margin: 0;
-  color: #241f1a;
-  font-size: 24px;
-  line-height: 1.1;
-  font-weight: 900;
-}
-
-.hero-order-steps {
-  display: grid;
-  gap: 12px;
-}
-
-.hero-order-steps div {
-  display: grid;
-  grid-template-columns: 38px 1fr;
-  gap: 12px;
-  align-items: start;
-  padding-top: 12px;
-  border-top: 1px solid #eadfd2;
-}
-
-.hero-order-steps span {
-  display: grid;
-  place-items: center;
-  width: 34px;
-  height: 34px;
-  border-radius: 999px;
-  background: #fff3e4;
-  color: #79401f;
-  font-size: 12px;
-  font-weight: 900;
-}
-
-.hero-order-steps p {
-  margin: 0;
-  color: #5f5147;
-  font-size: 13px;
-  line-height: 1.55;
+  line-height: 1.2;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .featured-section {
@@ -1047,21 +995,19 @@ async function loadProducts() {
   }
 
   .hero-showcase {
-    min-height: 430px;
+    grid-template-columns: minmax(0, 1fr);
   }
 
-  .hero-float-card.card-1 {
-    left: 0;
-    width: 56%;
+  .hero-main-card {
+    min-height: 410px;
   }
 
-  .hero-float-card.card-2 {
-    width: 44%;
+  .hero-mini-stack {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .hero-float-card.card-3 {
-    right: 34px;
-    width: 46%;
+  .hero-mini-card {
+    aspect-ratio: 4 / 3;
   }
 
   .featured-row {
@@ -1093,26 +1039,20 @@ async function loadProducts() {
     font-size: 10px;
   }
 
-  .hero-showcase {
-    min-height: 390px;
+  .hero-main-card {
+    min-height: 340px;
+    border-radius: 20px;
   }
 
-  .hero-order-card {
-    width: min(100%, 330px);
-    padding: 16px;
+  .hero-main-info {
+    right: 12px;
+    bottom: 12px;
+    left: 12px;
+    padding: 13px;
   }
 
-  .hero-order-card h2 {
-    font-size: 20px;
-  }
-
-  .hero-order-steps div {
-    grid-template-columns: 32px 1fr;
-  }
-
-  .hero-order-steps span {
-    width: 30px;
-    height: 30px;
+  .hero-main-info strong {
+    font-size: 18px;
   }
 
   .featured-row,

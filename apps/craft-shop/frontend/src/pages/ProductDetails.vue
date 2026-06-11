@@ -6,7 +6,10 @@
           <span class="pd-nav-brand-name">{{ shopName }}</span>
           <span class="pd-nav-brand-sub">Handmade with love</span>
         </RouterLink>
-        <RouterLink to="/" class="pd-btn ghost small">Back to Shop</RouterLink>
+        <div class="pd-nav-links">
+          <RouterLink to="/about" class="pd-btn ghost small">About</RouterLink>
+          <RouterLink to="/" class="pd-btn ghost small">Back to Shop</RouterLink>
+        </div>
       </div>
     </nav>
 
@@ -174,6 +177,12 @@ async function loadProduct() {
   align-items: center;
   gap: 16px;
   padding: 16px 0;
+}
+
+.pd-nav-links {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 .pd-nav-brand {

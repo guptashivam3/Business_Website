@@ -6,7 +6,10 @@
           <span class="gallery-nav-brand-name">{{ shopName }}</span>
           <span class="gallery-nav-brand-sub">Handmade with love</span>
         </RouterLink>
-        <RouterLink to="/" class="gallery-btn outline small">Back to Shop</RouterLink>
+        <div class="gallery-nav-links">
+          <RouterLink to="/about" class="gallery-btn outline small">About</RouterLink>
+          <RouterLink to="/" class="gallery-btn outline small">Back to Shop</RouterLink>
+        </div>
       </div>
     </nav>
 
@@ -56,7 +59,7 @@
           <p v-if="lightboxItem.category" class="gallery-cat">{{ lightboxItem.category }}</p>
           <h3 class="lightbox-title">{{ lightboxItem.title }}</h3>
           <p v-if="lightboxItem.description" class="lightbox-desc">{{ lightboxItem.description }}</p>
-          <a :href="customOrderLink(lightboxItem.title)" target="_blank" rel="noopener" class="gallery-btn whatsapp">
+          <a :href="customOrderLink(lightboxItem)" target="_blank" rel="noopener" class="gallery-btn whatsapp">
             Order Something Similar
           </a>
         </div>
@@ -96,8 +99,10 @@ function whatsAppLink(message) {
   return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`
 }
 
-function customOrderLink(title) {
-  return whatsAppLink(`Hi! I saw this in your gallery and would like something similar: ${title}`)
+function customOrderLink(item) {
+  return whatsAppLink(
+    `Hi! I saw this gallery design and would like something similar.\n\nDesign: ${item.title}\nImage: ${item.image_url}\n\nPlease share options and pricing.`
+  )
 }
 
 function openLightbox(item) {
@@ -153,6 +158,12 @@ async function loadGallery() {
   align-items: center;
   gap: 16px;
   padding: 16px 0;
+}
+
+.gallery-nav-links {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 .gallery-nav-brand {
