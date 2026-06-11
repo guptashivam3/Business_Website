@@ -1,13 +1,5 @@
 <template>
   <div class="pd-page">
-    <div class="site-marquee">
-      <div class="site-marquee-track">
-        <span>Confirm availability directly on WhatsApp</span>
-        <span>Custom color and packing changes are welcome</span>
-        <span>Handmade gifts for festive and family occasions</span>
-      </div>
-    </div>
-
     <nav class="pd-nav">
       <div class="container pd-nav-inner">
         <RouterLink to="/" class="pd-nav-brand">
@@ -177,50 +169,6 @@ async function loadProduct() {
 .pd-page {
   min-height: 100vh;
   background: #fffaf4;
-}
-
-.site-marquee {
-  overflow: hidden;
-  min-height: 38px;
-  background: #261f1a;
-  color: #f8efe5;
-  font-size: 13px;
-  font-weight: 800;
-  white-space: nowrap;
-}
-
-.site-marquee-track {
-  display: inline-flex;
-  gap: 42px;
-  min-width: max-content;
-  padding: 8px 0;
-  animation: marquee 24s linear infinite;
-}
-
-.site-marquee-track span {
-  position: relative;
-}
-
-.site-marquee-track span::after {
-  content: "";
-  position: absolute;
-  top: 50%;
-  right: -24px;
-  width: 5px;
-  height: 5px;
-  border-radius: 99px;
-  background: #c9a84c;
-  transform: translateY(-50%);
-}
-
-@keyframes marquee {
-  from {
-    transform: translateX(100vw);
-  }
-
-  to {
-    transform: translateX(-100%);
-  }
 }
 
 .pd-nav {
@@ -744,7 +692,6 @@ async function loadProduct() {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .site-marquee-track,
   .pd-media,
   .pd-info {
     animation: none;

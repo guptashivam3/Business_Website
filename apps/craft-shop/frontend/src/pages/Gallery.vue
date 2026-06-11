@@ -1,13 +1,5 @@
 <template>
   <div class="gallery-page">
-    <div class="site-marquee">
-      <div class="site-marquee-track">
-        <span>Inspiration gallery for custom handmade orders</span>
-        <span>Send any design on WhatsApp for similar work</span>
-        <span>Festive, gifting and family celebration pieces</span>
-      </div>
-    </div>
-
     <nav class="gallery-nav">
       <div class="container gallery-nav-inner">
         <RouterLink to="/" class="gallery-nav-brand">
@@ -149,50 +141,6 @@ async function loadGallery() {
   background:
     radial-gradient(circle at top left, rgba(184, 92, 56, 0.12), transparent 32rem),
     linear-gradient(180deg, #fffaf4 0%, #f8efe5 52%, #fffaf4 100%);
-}
-
-.site-marquee {
-  overflow: hidden;
-  min-height: 38px;
-  background: #261f1a;
-  color: #f8efe5;
-  font-size: 13px;
-  font-weight: 800;
-  white-space: nowrap;
-}
-
-.site-marquee-track {
-  display: inline-flex;
-  gap: 42px;
-  min-width: max-content;
-  padding: 8px 0;
-  animation: marquee 24s linear infinite;
-}
-
-.site-marquee-track span {
-  position: relative;
-}
-
-.site-marquee-track span::after {
-  content: "";
-  position: absolute;
-  top: 50%;
-  right: -24px;
-  width: 5px;
-  height: 5px;
-  border-radius: 99px;
-  background: #c9a84c;
-  transform: translateY(-50%);
-}
-
-@keyframes marquee {
-  from {
-    transform: translateX(100vw);
-  }
-
-  to {
-    transform: translateX(-100%);
-  }
 }
 
 .gallery-nav {
@@ -641,7 +589,6 @@ async function loadGallery() {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .site-marquee-track,
   .gallery-item {
     animation: none;
   }
