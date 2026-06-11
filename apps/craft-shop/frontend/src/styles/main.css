@@ -569,7 +569,23 @@ textarea {
   backdrop-filter: blur(16px);
 }
 
+.mobile-action-indicator {
+  position: absolute;
+  top: 8px;
+  bottom: 8px;
+  left: 8px;
+  z-index: 0;
+  width: calc((100% - 32px) / 3);
+  border-radius: 999px;
+  background: #1f9d57;
+  box-shadow: 0 10px 24px rgba(24, 111, 64, 0.22);
+  transform: translateX(calc(var(--active-index, 0) * (100% + 8px)));
+  transition: transform 240ms ease;
+}
+
 .mobile-action {
+  position: relative;
+  z-index: 1;
   display: grid;
   place-items: center;
   min-height: 42px;
@@ -577,10 +593,10 @@ textarea {
   color: var(--ink);
   font-size: 0.82rem;
   font-weight: 900;
+  transition: color 180ms ease;
 }
 
-.mobile-action.primary {
-  background: #1f9d57;
+.mobile-action.active {
   color: #ffffff;
 }
 
