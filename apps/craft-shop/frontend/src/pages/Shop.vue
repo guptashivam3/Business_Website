@@ -45,26 +45,18 @@
         </div>
 
         <div v-if="heroPrimaryProduct" class="hero-showcase">
-          <RouterLink :to="`/product/${heroPrimaryProduct.slug}`" class="hero-main-card">
-            <img :src="heroPrimaryProduct.image_url" :alt="heroPrimaryProduct.name" />
-            <div class="hero-main-info">
+          <RouterLink :to="`/product/${heroPrimaryProduct.slug}`" class="hero-feature-card">
+            <div class="hero-feature-img-wrap">
+              <img :src="heroPrimaryProduct.image_url" :alt="heroPrimaryProduct.name" />
+            </div>
+            <div class="hero-feature-info">
               <span>{{ categoryName(heroPrimaryProduct) }}</span>
-              <strong>{{ heroPrimaryProduct.name }}</strong>
-              <p>Rs {{ Number(heroPrimaryProduct.price).toFixed(2) }}</p>
+              <h2>{{ heroPrimaryProduct.name }}</h2>
+              <p v-if="heroPrimaryProduct.description">{{ heroPrimaryProduct.description }}</p>
+              <strong>Rs {{ Number(heroPrimaryProduct.price).toFixed(2) }}</strong>
+              <small>View product details</small>
             </div>
           </RouterLink>
-
-          <div class="hero-mini-stack">
-            <RouterLink
-              v-for="product in heroSecondaryProducts"
-              :key="product.id"
-              :to="`/product/${product.slug}`"
-              class="hero-mini-card"
-            >
-              <img :src="product.image_url" :alt="product.name" />
-              <span>{{ product.name }}</span>
-            </RouterLink>
-          </div>
         </div>
       </div>
     </section>
@@ -453,103 +445,86 @@ async function loadProducts() {
 }
 
 .hero-showcase {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 122px;
-  gap: 14px;
-  align-items: stretch;
+  width: 100%;
 }
 
-.hero-main-card,
-.hero-mini-card {
-  position: relative;
+.hero-feature-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(220px, 0.95fr);
   overflow: hidden;
   border: 1px solid rgba(234, 223, 210, 0.92);
-  border-radius: 24px;
-  background: #ffffff;
+  border-radius: 28px;
+  background: rgba(255, 253, 248, 0.92);
   box-shadow: 0 22px 58px rgba(65, 42, 24, 0.14);
   transition: transform 180ms ease, box-shadow 180ms ease;
 }
 
-.hero-main-card:hover,
-.hero-mini-card:hover {
+.hero-feature-card:hover {
   box-shadow: 0 28px 70px rgba(65, 42, 24, 0.18);
   transform: translateY(-3px);
 }
 
-.hero-main-card img,
-.hero-mini-card img {
+.hero-feature-img-wrap {
+  min-height: 410px;
+  overflow: hidden;
+  background: #f2e5d7;
+}
+
+.hero-feature-img-wrap img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-.hero-main-card {
-  min-height: 470px;
+.hero-feature-info {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 410px;
+  padding: 34px;
 }
 
-.hero-main-info {
-  position: absolute;
-  right: 18px;
-  bottom: 18px;
-  left: 18px;
-  padding: 16px;
-  border-radius: 18px;
-  background: rgba(255, 253, 248, 0.9);
-  box-shadow: 0 18px 42px rgba(65, 42, 24, 0.16);
-  backdrop-filter: blur(14px);
-}
-
-.hero-main-info span {
+.hero-feature-info span {
   display: block;
+  margin-bottom: 12px;
   color: #79401f;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 900;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
-.hero-main-info strong {
-  display: -webkit-box;
-  overflow: hidden;
+.hero-feature-info h2 {
+  margin: 0 0 12px;
   color: #241f1a;
-  margin-top: 4px;
-  font-size: 22px;
+  font-size: clamp(28px, 4vw, 44px);
   line-height: 1.15;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
 }
 
-.hero-main-info p {
-  margin: 8px 0 0;
-  color: #a85f33;
-  font-weight: 900;
-}
-
-.hero-mini-stack {
-  display: grid;
-  gap: 14px;
-}
-
-.hero-mini-card {
-  min-height: 0;
-}
-
-.hero-mini-card span {
-  position: absolute;
-  right: 8px;
-  bottom: 8px;
-  left: 8px;
+.hero-feature-info p {
   display: -webkit-box;
   overflow: hidden;
-  border-radius: 12px;
-  padding: 8px;
-  background: rgba(255, 253, 248, 0.88);
-  color: #261f1a;
-  font-size: 11px;
-  font-weight: 900;
-  line-height: 1.2;
+  margin: 0 0 18px;
+  color: #6f6258;
+  font-size: 15px;
+  line-height: 1.65;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 3;
+}
+
+.hero-feature-info strong {
+  color: #a85f33;
+  font-size: 24px;
+  font-weight: 900;
+}
+
+.hero-feature-info small {
+  width: max-content;
+  margin-top: 18px;
+  border-bottom: 2px solid #a85f33;
+  color: #261f1a;
+  font-size: 13px;
+  font-weight: 900;
 }
 
 .featured-section {
@@ -998,15 +973,16 @@ async function loadProducts() {
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .hero-main-card {
-    min-height: 410px;
+  .hero-feature-card {
+    grid-template-columns: 1fr;
   }
 
-  .hero-mini-stack {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .hero-feature-img-wrap,
+  .hero-feature-info {
+    min-height: auto;
   }
 
-  .hero-mini-card {
+  .hero-feature-img-wrap {
     aspect-ratio: 4 / 3;
   }
 
@@ -1039,20 +1015,16 @@ async function loadProducts() {
     font-size: 10px;
   }
 
-  .hero-main-card {
-    min-height: 340px;
+  .hero-feature-card {
     border-radius: 20px;
   }
 
-  .hero-main-info {
-    right: 12px;
-    bottom: 12px;
-    left: 12px;
-    padding: 13px;
+  .hero-feature-info {
+    padding: 20px;
   }
 
-  .hero-main-info strong {
-    font-size: 18px;
+  .hero-feature-info h2 {
+    font-size: 24px;
   }
 
   .featured-row,
