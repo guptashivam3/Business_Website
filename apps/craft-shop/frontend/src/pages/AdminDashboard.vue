@@ -17,6 +17,29 @@
     </header>
 
     <main class="admin-body container">
+      <section class="admin-overview">
+        <div class="overview-card">
+          <span>Total Products</span>
+          <strong>{{ products.length }}</strong>
+          <p>{{ availableProducts }} available</p>
+        </div>
+        <div class="overview-card">
+          <span>Featured</span>
+          <strong>{{ featuredProducts }}</strong>
+          <p>Shown in premium sections</p>
+        </div>
+        <div class="overview-card">
+          <span>Sold Out</span>
+          <strong>{{ soldOutProducts }}</strong>
+          <p>Hidden from ordering priority</p>
+        </div>
+        <div class="overview-card">
+          <span>Gallery</span>
+          <strong>{{ visibleGalleryItems }}</strong>
+          <p>{{ hiddenGalleryItems }} hidden</p>
+        </div>
+      </section>
+
       <div class="admin-tabs">
         <button class="admin-tab" :class="{ active: tab === 'products' }" type="button" @click="tab = 'products'">
           Products <span class="tab-count">{{ products.length }}</span>
@@ -32,7 +55,24 @@
             <h2 class="tab-title">Manage Products</h2>
             <p class="tab-sub">Add products, upload media, and update availability.</p>
           </div>
-          <button class="admin-btn primary small" type="button" @click="openProductForm(null)">Add Product</button>
+          <div class="tab-actions">
+            <RouterLink to="/" class="admin-btn outline small" target="_blank">Preview Shop</RouterLink>
+            <button class="admin-btn primary small" type="button" @click="openProductForm(null)">Add Product</button>
+          </div>
+        </div>
+
+        <div class="admin-tools">
+          <label class="admin-search">
+            <span>Search Products</span>
+            <input v-model.trim="productSearch" type="search" placeholder="Search by name, category, description..." />
+          </label>
+          <select v-model="productFilter" class="admin-filter">
+            <option value="all">All products</option>
+            <option value="available">Available only</option>
+            <option value="sold">Sold out only</option>
+            <option value="featured">Featured only</option>
+            <option value="missingImage">Missing image</option>
+          </select>
         </div>
 
         <div v-if="loadingProducts" class="loading-wrap"><div class="spinner"></div></div>
@@ -44,6 +84,12 @@
           <button class="admin-btn primary" type="button" @click="openProductForm(null)">Add First Product</button>
         </div>
 
+        <div v-else-if="filteredProducts.length === 0" class="empty-state compact">
+          <div class="empty-state-icon">Find</div>
+          <h3>No matching products</h3>
+          <p>Try a different search or filter.</p>
+        </div>
+
         <div v-else class="products-table">
           <div class="products-table-head">
             <span>Product</span>
@@ -51,7 +97,7 @@
             <span>Status</span>
             <span>Actions</span>
           </div>
-          <div v-for="product in products" :key="product.id" class="products-row">
+          <div v-for="product in filteredProducts" :key="product.id" class="products-row">
             <div class="products-row-info">
               <div class="products-row-img-wrap">
                 <img v-if="product.image_url" :src="product.image_url" :alt="product.name" class="products-row-img" />
@@ -86,7 +132,22 @@
             <h2 class="tab-title">Manage Gallery</h2>
             <p class="tab-sub">Show completed work as inspiration for custom orders.</p>
           </div>
-          <button class="admin-btn primary small" type="button" @click="openGalleryForm(null)">Add Item</button>
+          <div class="tab-actions">
+            <RouterLink to="/gallery" class="admin-btn outline small" target="_blank">Preview Gallery</RouterLink>
+            <button class="admin-btn primary small" type="button" @click="openGalleryForm(null)">Add Item</button>
+          </div>
+        </div>
+
+        <div class="admin-tools">
+          <label class="admin-search">
+            <span>Search Gallery</span>
+            <input v-model.trim="gallerySearch" type="search" placeholder="Search by title, category, description..." />
+          </label>
+          <select v-model="galleryFilter" class="admin-filter">
+            <option value="all">All gallery items</option>
+            <option value="visible">Visible only</option>
+            <option value="hidden">Hidden only</option>
+          </select>
         </div>
 
         <div v-if="loadingGallery" class="loading-wrap"><div class="spinner"></div></div>
@@ -98,8 +159,14 @@
           <button class="admin-btn primary" type="button" @click="openGalleryForm(null)">Add First Item</button>
         </div>
 
+        <div v-else-if="filteredGalleryItems.length === 0" class="empty-state compact">
+          <div class="empty-state-icon">Find</div>
+          <h3>No matching gallery items</h3>
+          <p>Try a different search or filter.</p>
+        </div>
+
         <div v-else class="gallery-admin-grid">
-          <article v-for="item in galleryItems" :key="item.id" class="gallery-admin-card" :class="{ hidden: !item.is_visible }">
+          <article v-for="item in filteredGalleryItems" :key="item.id" class="gallery-admin-card" :class="{ hidden: !item.is_visible }">
             <div class="gallery-admin-img-wrap">
               <img :src="item.image_url" :alt="item.title" class="gallery-admin-img" />
               <div v-if="!item.is_visible" class="gallery-hidden-label">Hidden</div>
@@ -272,7 +339,7 @@
 </template>
 
 <script setup>
-import { onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { supabase } from '../lib/supabase.js'
 
@@ -284,6 +351,10 @@ const products = ref([])
 const galleryItems = ref([])
 const loadingProducts = ref(true)
 const loadingGallery = ref(true)
+const productSearch = ref('')
+const productFilter = ref('all')
+const gallerySearch = ref('')
+const galleryFilter = ref('all')
 
 const showProductForm = ref(false)
 const editingProduct = ref(null)
@@ -304,6 +375,42 @@ const saving = ref(false)
 const formError = ref('')
 const deleteTarget = ref(null)
 const toast = ref(null)
+
+const availableProducts = computed(() => products.value.filter((product) => product.is_available).length)
+const soldOutProducts = computed(() => products.value.filter((product) => !product.is_available).length)
+const featuredProducts = computed(() => products.value.filter((product) => product.is_featured).length)
+const visibleGalleryItems = computed(() => galleryItems.value.filter((item) => item.is_visible).length)
+const hiddenGalleryItems = computed(() => galleryItems.value.filter((item) => !item.is_visible).length)
+
+const filteredProducts = computed(() => {
+  const query = productSearch.value.toLowerCase()
+  return products.value.filter((product) => {
+    const searchable = `${product.name} ${product.category || ''} ${product.description || ''}`.toLowerCase()
+    const matchesSearch = !query || searchable.includes(query)
+    const matchesFilter =
+      productFilter.value === 'all' ||
+      (productFilter.value === 'available' && product.is_available) ||
+      (productFilter.value === 'sold' && !product.is_available) ||
+      (productFilter.value === 'featured' && product.is_featured) ||
+      (productFilter.value === 'missingImage' && !product.image_url)
+
+    return matchesSearch && matchesFilter
+  })
+})
+
+const filteredGalleryItems = computed(() => {
+  const query = gallerySearch.value.toLowerCase()
+  return galleryItems.value.filter((item) => {
+    const searchable = `${item.title} ${item.category || ''} ${item.description || ''}`.toLowerCase()
+    const matchesSearch = !query || searchable.includes(query)
+    const matchesFilter =
+      galleryFilter.value === 'all' ||
+      (galleryFilter.value === 'visible' && item.is_visible) ||
+      (galleryFilter.value === 'hidden' && !item.is_visible)
+
+    return matchesSearch && matchesFilter
+  })
+})
 
 function defaultProductForm() {
   return {
@@ -684,6 +791,44 @@ onMounted(async () => {
   padding: 32px 0 64px;
 }
 
+.admin-overview {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.overview-card {
+  padding: 18px;
+  border: 1px solid #eadfd2;
+  border-radius: 18px;
+  background: linear-gradient(180deg, #ffffff, #fff8ef);
+  box-shadow: 0 14px 34px rgba(65, 42, 24, 0.07);
+}
+
+.overview-card span {
+  color: #79401f;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.overview-card strong {
+  display: block;
+  margin: 6px 0 4px;
+  color: #241f1a;
+  font-size: 32px;
+  line-height: 1;
+}
+
+.overview-card p {
+  margin: 0;
+  color: #77695f;
+  font-size: 13px;
+  font-weight: 700;
+}
+
 .admin-btn {
   display: inline-flex;
   align-items: center;
@@ -776,6 +921,12 @@ onMounted(async () => {
   margin-bottom: 20px;
 }
 
+.tab-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 .tab-title {
   margin: 0 0 6px;
   color: #241f1a;
@@ -785,6 +936,46 @@ onMounted(async () => {
 .tab-sub {
   margin: 0;
   color: #77695f;
+}
+
+.admin-tools {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 220px;
+  gap: 12px;
+  align-items: end;
+  margin-bottom: 18px;
+}
+
+.admin-search {
+  display: grid;
+  gap: 6px;
+}
+
+.admin-search span {
+  color: #79401f;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.admin-search input,
+.admin-filter {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid #eadfd2;
+  border-radius: 999px;
+  padding: 0 15px;
+  background: #ffffff;
+  color: #261f1a;
+  outline: none;
+  box-shadow: 0 10px 26px rgba(65, 42, 24, 0.05);
+}
+
+.admin-search input:focus,
+.admin-filter:focus {
+  border-color: #a85f33;
+  box-shadow: 0 0 0 3px rgba(168, 95, 51, 0.12);
 }
 
 .loading-wrap,
@@ -799,6 +990,10 @@ onMounted(async () => {
   background: #fffdf8;
   color: #77695f;
   text-align: center;
+}
+
+.empty-state.compact {
+  min-height: 180px;
 }
 
 .spinner {
@@ -1185,6 +1380,14 @@ onMounted(async () => {
 }
 
 @media (max-width: 820px) {
+  .admin-overview {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-tools {
+    grid-template-columns: 1fr;
+  }
+
   .products-table-head {
     display: none;
   }
@@ -1200,6 +1403,10 @@ onMounted(async () => {
 }
 
 @media (max-width: 560px) {
+  .admin-overview {
+    grid-template-columns: 1fr;
+  }
+
   .admin-header-inner,
   .tab-header {
     align-items: flex-start;
