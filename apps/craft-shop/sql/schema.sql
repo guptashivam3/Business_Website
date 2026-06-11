@@ -53,6 +53,19 @@ create table if not exists public.gallery_items (
   created_at timestamptz default now()
 );
 
+create table if not exists public.site_settings (
+  id text primary key default 'about',
+  shop_name text default 'Laxmi Creations',
+  owner_name text default 'Laxmi Gupta',
+  owner_phone text default '+918793662673',
+  owner_email text default 'laxmigupta8888@gmail.com',
+  owner_photo_url text,
+  about_heading text default 'Handmade gifts crafted by Laxmi Gupta',
+  about_intro text default 'Laxmi Creations is a small handmade craft studio for thoughtful gifting, festive hampers, chocolate garlands, decorated trays, potli favors, and custom celebration pieces.',
+  about_story text default 'Every order is handled personally, from choosing the color theme to arranging the final packing. The goal is simple: make gifting feel warm, beautiful, and easy for families who want something more personal than a ready-made store item.',
+  updated_at timestamptz default now()
+);
+
 create table if not exists public.gallery (
   id uuid primary key default gen_random_uuid(),
   title text not null,
@@ -76,16 +89,19 @@ create table if not exists public.orders (
 alter table public.categories enable row level security;
 alter table public.products enable row level security;
 alter table public.gallery_items enable row level security;
+alter table public.site_settings enable row level security;
 alter table public.gallery enable row level security;
 alter table public.orders enable row level security;
 
 drop policy if exists "Public can read categories" on public.categories;
 drop policy if exists "Public can read products" on public.products;
 drop policy if exists "Public can read visible gallery items" on public.gallery_items;
+drop policy if exists "Public can read site settings" on public.site_settings;
 drop policy if exists "Public can view visible gallery" on public.gallery;
 drop policy if exists "Authenticated users can manage categories" on public.categories;
 drop policy if exists "Authenticated users can manage products" on public.products;
 drop policy if exists "Authenticated users can manage gallery items" on public.gallery_items;
+drop policy if exists "Authenticated users can manage site settings" on public.site_settings;
 drop policy if exists "Admin can manage gallery" on public.gallery;
 drop policy if exists "Authenticated users can read orders" on public.orders;
 drop policy if exists "Anyone can create order inquiry" on public.orders;
@@ -102,6 +118,10 @@ using (true);
 create policy "Public can read visible gallery items"
 on public.gallery_items for select
 using (is_visible = true or auth.role() = 'authenticated');
+
+create policy "Public can read site settings"
+on public.site_settings for select
+using (true);
 
 create policy "Public can view visible gallery"
 on public.gallery for select
@@ -121,6 +141,11 @@ with check (auth.role() = 'authenticated');
 
 create policy "Authenticated users can manage gallery items"
 on public.gallery_items for all
+using (auth.role() = 'authenticated')
+with check (auth.role() = 'authenticated');
+
+create policy "Authenticated users can manage site settings"
+on public.site_settings for all
 using (auth.role() = 'authenticated')
 with check (auth.role() = 'authenticated');
 
@@ -171,3 +196,7 @@ values
   ('Gifts', 'gifts'),
   ('Clothing', 'clothing')
 on conflict (slug) do nothing;
+
+insert into public.site_settings (id)
+values ('about')
+on conflict (id) do nothing;

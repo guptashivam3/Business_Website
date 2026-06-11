@@ -47,6 +47,9 @@
         <button class="admin-tab" :class="{ active: tab === 'gallery' }" type="button" @click="tab = 'gallery'">
           Gallery <span class="tab-count">{{ galleryItems.length }}</span>
         </button>
+        <button class="admin-tab" :class="{ active: tab === 'settings' }" type="button" @click="tab = 'settings'">
+          Site Details
+        </button>
       </div>
 
       <section v-if="tab === 'products'" class="tab-content" v-reveal="{ delay: 80 }">
@@ -183,6 +186,70 @@
               <button class="admin-btn danger small" type="button" @click="deleteGalleryItem(item)">Delete</button>
             </div>
           </article>
+        </div>
+      </section>
+
+      <section v-if="tab === 'settings'" class="tab-content" v-reveal="{ delay: 80 }">
+        <div class="tab-header">
+          <div>
+            <h2 class="tab-title">Site Details</h2>
+            <p class="tab-sub">Update the About Us page, owner contact details, and profile photo.</p>
+          </div>
+          <RouterLink to="/about" class="admin-btn outline small" target="_blank">Preview About Us</RouterLink>
+        </div>
+
+        <div class="settings-panel">
+          <div class="form-grid">
+            <div class="field">
+              <label>Shop Name</label>
+              <input v-model="siteForm.shop_name" placeholder="Laxmi Creations" />
+            </div>
+            <div class="field">
+              <label>Owner Name</label>
+              <input v-model="siteForm.owner_name" placeholder="Laxmi Gupta" />
+            </div>
+            <div class="field">
+              <label>Phone</label>
+              <input v-model="siteForm.owner_phone" placeholder="+918793662673" />
+            </div>
+            <div class="field">
+              <label>Email</label>
+              <input v-model="siteForm.owner_email" type="email" placeholder="laxmigupta8888@gmail.com" />
+            </div>
+            <div class="field full">
+              <label>About Heading</label>
+              <input v-model="siteForm.about_heading" placeholder="Handmade gifts crafted by Laxmi Gupta" />
+            </div>
+            <div class="field full">
+              <label>Intro Text</label>
+              <textarea v-model="siteForm.about_intro" rows="3" placeholder="Short intro for About Us"></textarea>
+            </div>
+            <div class="field full">
+              <label>Story Text</label>
+              <textarea v-model="siteForm.about_story" rows="4" placeholder="Longer story shown on About Us"></textarea>
+            </div>
+            <div class="field full">
+              <label>Owner Photo</label>
+              <div class="upload-zone" :class="{ 'has-file': siteForm.owner_photo_url }" @click="triggerUpload('owner')">
+                <input ref="ownerPhotoInput" type="file" accept="image/*" @change="uploadFile($event, 'owner')" />
+                <div v-if="siteForm.owner_photo_url" class="upload-preview">
+                  <img :src="siteForm.owner_photo_url" alt="Owner preview" />
+                  <button type="button" class="upload-remove" @click.stop="siteForm.owner_photo_url = ''">Remove</button>
+                </div>
+                <div v-else class="upload-placeholder">
+                  <strong>{{ uploadingOwnerPhoto ? 'Uploading...' : 'Click to upload owner photo' }}</strong>
+                  <span>Shown on About Us</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <p v-if="formError" class="form-error">{{ formError }}</p>
+          <div class="settings-actions">
+            <button class="admin-btn primary" type="button" :disabled="saving" @click="saveSiteSettings">
+              {{ saving ? 'Saving...' : 'Save Site Details' }}
+            </button>
+          </div>
         </div>
       </section>
     </main>
@@ -363,13 +430,16 @@ const productForm = reactive(defaultProductForm())
 const showGalleryForm = ref(false)
 const editingGallery = ref(null)
 const galleryForm = reactive(defaultGalleryForm())
+const siteForm = reactive(defaultSiteForm())
 
 const imageInput = ref(null)
 const videoInput = ref(null)
 const galleryInput = ref(null)
+const ownerPhotoInput = ref(null)
 const uploadingImage = ref(false)
 const uploadingVideo = ref(false)
 const uploadingGallery = ref(false)
+const uploadingOwnerPhoto = ref(false)
 
 const saving = ref(false)
 const formError = ref('')
@@ -435,6 +505,20 @@ function defaultGalleryForm() {
     description: '',
     image_url: '',
     is_visible: true
+  }
+}
+
+function defaultSiteForm() {
+  return {
+    id: 'about',
+    shop_name: 'Laxmi Creations',
+    owner_name: 'Laxmi Gupta',
+    owner_phone: '+918793662673',
+    owner_email: 'laxmigupta8888@gmail.com',
+    owner_photo_url: '',
+    about_heading: 'Handmade gifts crafted by Laxmi Gupta',
+    about_intro: 'Laxmi Creations is a small handmade craft studio for thoughtful gifting, festive hampers, chocolate garlands, decorated trays, potli favors, and custom celebration pieces.',
+    about_story: 'Every order is handled personally, from choosing the color theme to arranging the final packing. The goal is simple: make gifting feel warm, beautiful, and easy for families who want something more personal than a ready-made store item.'
   }
 }
 
@@ -652,6 +736,7 @@ function triggerUpload(type) {
   if (type === 'image') imageInput.value?.click()
   if (type === 'video') videoInput.value?.click()
   if (type === 'gallery') galleryInput.value?.click()
+  if (type === 'owner') ownerPhotoInput.value?.click()
 }
 
 async function uploadFile(event, type) {
@@ -661,15 +746,17 @@ async function uploadFile(event, type) {
   if (type === 'image') uploadingImage.value = true
   if (type === 'video') uploadingVideo.value = true
   if (type === 'gallery') uploadingGallery.value = true
+  if (type === 'owner') uploadingOwnerPhoto.value = true
 
   const extension = file.name.split('.').pop() || 'file'
-  const folder = type === 'video' ? 'videos' : type === 'gallery' ? 'gallery' : 'products'
+  const folder = type === 'video' ? 'videos' : type === 'gallery' ? 'gallery' : type === 'owner' ? 'site' : 'products'
   const path = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2, 10)}.${extension}`
   const { error: uploadError } = await supabase.storage.from('product-media').upload(path, file)
 
   if (type === 'image') uploadingImage.value = false
   if (type === 'video') uploadingVideo.value = false
   if (type === 'gallery') uploadingGallery.value = false
+  if (type === 'owner') uploadingOwnerPhoto.value = false
 
   if (uploadError) {
     showToast(uploadError.message, 'error')
@@ -680,6 +767,36 @@ async function uploadFile(event, type) {
   if (type === 'image') productForm.image_url = data.publicUrl
   if (type === 'video') productForm.video_url = data.publicUrl
   if (type === 'gallery') galleryForm.image_url = data.publicUrl
+  if (type === 'owner') siteForm.owner_photo_url = data.publicUrl
+}
+
+async function loadSiteSettings() {
+  const { data, error } = await supabase.from('site_settings').select('*').eq('id', 'about').maybeSingle()
+  if (error) {
+    showToast('Run the latest schema.sql to enable Site Details.', 'error')
+    return
+  }
+  if (data) resetReactive(siteForm, { ...defaultSiteForm(), ...data })
+}
+
+async function saveSiteSettings() {
+  saving.value = true
+  formError.value = ''
+
+  const { error } = await supabase.from('site_settings').upsert({
+    ...siteForm,
+    id: 'about',
+    updated_at: new Date().toISOString()
+  })
+
+  saving.value = false
+
+  if (error) {
+    formError.value = `${error.message}. If this is the first time, run the latest schema.sql in Supabase.`
+    return
+  }
+
+  showToast('Site details updated.')
 }
 
 async function loadProducts() {
@@ -707,7 +824,7 @@ async function loadGallery() {
 }
 
 onMounted(async () => {
-  await Promise.all([loadProducts(), loadGallery()])
+  await Promise.all([loadProducts(), loadGallery(), loadSiteSettings()])
 })
 </script>
 
@@ -1191,6 +1308,20 @@ onMounted(async () => {
   border-top: 1px solid #eadfd2;
 }
 
+.settings-panel {
+  border: 1px solid #eadfd2;
+  border-radius: 20px;
+  padding: 22px;
+  background: #ffffff;
+  box-shadow: 0 16px 42px rgba(65, 42, 24, 0.08);
+}
+
+.settings-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 18px;
+}
+
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -1445,6 +1576,16 @@ onMounted(async () => {
     padding-top: 20px;
   }
 
+  .admin-tabs {
+    overflow-x: auto;
+    padding-bottom: 2px;
+  }
+
+  .admin-tab {
+    flex: 0 0 auto;
+    padding-inline: 14px;
+  }
+
   .tab-title {
     font-size: 40px;
     line-height: 1.05;
@@ -1532,6 +1673,15 @@ onMounted(async () => {
   .gallery-admin-actions .admin-btn {
     min-height: 36px;
     font-size: 12px;
+  }
+
+  .settings-panel {
+    padding: 16px;
+    border-radius: 18px;
+  }
+
+  .settings-actions .admin-btn {
+    width: 100%;
   }
 
   .modal-overlay {

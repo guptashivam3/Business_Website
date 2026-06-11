@@ -18,10 +18,9 @@
         <div class="container about-hero-inner">
           <div class="about-copy">
             <p class="about-label">Meet the maker</p>
-            <h1>Handmade gifts crafted by Laxmi Gupta</h1>
+            <h1>{{ siteSettings.about_heading }}</h1>
             <p class="about-lead">
-              Laxmi Creations is a small handmade craft studio for thoughtful gifting, festive hampers,
-              chocolate garlands, decorated trays, potli favors, and custom celebration pieces.
+              {{ siteSettings.about_intro }}
             </p>
             <div class="about-actions">
               <a :href="whatsAppLink('Hi Laxmi ji, I want to discuss a handmade order.')" target="_blank" rel="noopener" class="about-btn primary">
@@ -33,12 +32,15 @@
 
           <div class="owner-card">
             <div class="owner-photo-placeholder">
-              <span>Photo</span>
-              <p>Owner photo can be added here later</p>
+              <img v-if="siteSettings.owner_photo_url" :src="siteSettings.owner_photo_url" :alt="siteSettings.owner_name" />
+              <template v-else>
+                <span>Photo</span>
+                <p>Owner photo can be added here later</p>
+              </template>
             </div>
             <div class="owner-info">
               <span>Founder & Maker</span>
-              <h2>Laxmi Gupta</h2>
+              <h2>{{ siteSettings.owner_name }}</h2>
               <p>Designing personal, handmade pieces for gifts, rituals, family events, and celebrations.</p>
             </div>
           </div>
@@ -50,9 +52,7 @@
           <p class="about-label">What we do</p>
           <h2>Made for moments that deserve care</h2>
           <p>
-            Every order is handled personally, from choosing the color theme to arranging the final packing.
-            The goal is simple: make gifting feel warm, beautiful, and easy for families who want something
-            more personal than a ready-made store item.
+            {{ siteSettings.about_story }}
           </p>
         </div>
 
@@ -80,16 +80,16 @@
           <div>
             <p class="about-label">Contact</p>
             <h2>Have an idea for a gift?</h2>
-            <p>Share the occasion, budget, preferred colors, and delivery date. Laxmi will confirm what can be made.</p>
+            <p>Share the occasion, budget, preferred colors, and delivery date. {{ siteSettings.owner_name }} will confirm what can be made.</p>
           </div>
           <div class="contact-cards">
             <a :href="`tel:${ownerPhone}`" class="contact-card">
               <span>Phone</span>
-              <strong>+91 8793662673</strong>
+              <strong>{{ displayPhone }}</strong>
             </a>
             <a :href="`mailto:${ownerEmail}`" class="contact-card">
               <span>Email</span>
-              <strong>{{ ownerEmail }}</strong>
+              <strong>{{ siteSettings.owner_email }}</strong>
             </a>
             <a :href="whatsAppLink('Hi Laxmi ji, I saw your website and want to place a custom order.')" target="_blank" rel="noopener" class="contact-card highlight">
               <span>WhatsApp</span>
@@ -103,12 +103,34 @@
 </template>
 
 <script setup>
+import { computed, onMounted, reactive } from 'vue'
+import { supabase } from '../lib/supabase.js'
+
 const shopName = import.meta.env.VITE_SHOP_NAME || 'Laxmi Creations'
-const ownerPhone = '+918793662673'
-const ownerEmail = 'laxmigupta8888@gmail.com'
+const siteSettings = reactive({
+  shop_name: 'Laxmi Creations',
+  owner_name: 'Laxmi Gupta',
+  owner_phone: '+918793662673',
+  owner_email: 'laxmigupta8888@gmail.com',
+  owner_photo_url: '',
+  about_heading: 'Handmade gifts crafted by Laxmi Gupta',
+  about_intro: 'Laxmi Creations is a small handmade craft studio for thoughtful gifting, festive hampers, chocolate garlands, decorated trays, potli favors, and custom celebration pieces.',
+  about_story: 'Every order is handled personally, from choosing the color theme to arranging the final packing. The goal is simple: make gifting feel warm, beautiful, and easy for families who want something more personal than a ready-made store item.'
+})
+
+const ownerPhone = computed(() => siteSettings.owner_phone || '+918793662673')
+const ownerEmail = computed(() => siteSettings.owner_email || 'laxmigupta8888@gmail.com')
+const displayPhone = computed(() => ownerPhone.value.replace(/^(\+91)(\d{5})(\d{5})$/, '$1 $2 $3'))
 
 function whatsAppLink(message) {
-  return `https://wa.me/${ownerPhone.replace('+', '')}?text=${encodeURIComponent(message)}`
+  return `https://wa.me/${ownerPhone.value.replace('+', '')}?text=${encodeURIComponent(message)}`
+}
+
+onMounted(loadSiteSettings)
+
+async function loadSiteSettings() {
+  const { data, error } = await supabase.from('site_settings').select('*').eq('id', 'about').maybeSingle()
+  if (!error && data) Object.assign(siteSettings, data)
 }
 </script>
 
@@ -268,6 +290,12 @@ function whatsAppLink(message) {
   text-align: center;
 }
 
+.owner-photo-placeholder img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 .owner-photo-placeholder span {
   display: grid;
   place-items: center;
@@ -402,7 +430,8 @@ function whatsAppLink(message) {
   }
 
   .story-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
   }
 }
 
@@ -458,11 +487,24 @@ function whatsAppLink(message) {
   }
 
   .story-card {
-    padding: 20px;
+    padding: 16px;
   }
 
   .story-card h2 {
     font-size: 32px;
+  }
+
+  .story-grid .story-card h3 {
+    font-size: 18px;
+  }
+
+  .story-grid .story-card p {
+    font-size: 14px;
+    line-height: 1.55;
+  }
+
+  .story-grid .story-card:last-child {
+    grid-column: 1 / -1;
   }
 }
 
