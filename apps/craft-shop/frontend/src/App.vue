@@ -20,8 +20,7 @@
       rel="noopener"
       class="mobile-action"
       :class="{ active: activeMobileIndex === 2 }"
-      @pointerdown="whatsAppActive = true"
-      @blur="whatsAppActive = false"
+      @click="markWhatsAppActive"
     >
       WhatsApp
     </a>
@@ -29,12 +28,13 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 
 const route = useRoute()
 const phone = import.meta.env.VITE_WHATSAPP_PHONE || ''
 const whatsAppActive = ref(false)
+let whatsAppTimer = null
 
 const showMobileBar = computed(() => !route.path.startsWith('/admin'))
 const activeMobileIndex = computed(() => {
@@ -46,4 +46,20 @@ const whatsAppLink = computed(() => {
   const message = 'Hi! I want to discuss a handmade order.'
   return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`
 })
+
+function markWhatsAppActive() {
+  whatsAppActive.value = true
+  clearTimeout(whatsAppTimer)
+  whatsAppTimer = setTimeout(() => {
+    whatsAppActive.value = false
+  }, 1200)
+}
+
+watch(
+  () => route.fullPath,
+  () => {
+    whatsAppActive.value = false
+    clearTimeout(whatsAppTimer)
+  }
+)
 </script>
