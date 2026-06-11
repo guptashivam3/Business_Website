@@ -72,7 +72,7 @@
               </a>
             </div>
 
-            <div class="upi-card">
+            <div v-if="showUpiPayment" class="upi-card">
               <div class="upi-header">
                 <span class="upi-icon">UPI</span>
                 <div>
@@ -90,10 +90,13 @@
             </div>
           </div>
 
-          <div class="trust-row">
-            <div class="trust-item"><span>Secure</span><strong>Direct owner contact</strong></div>
-            <div class="trust-item"><span>Service</span><strong>Personal confirmation</strong></div>
-            <div class="trust-item"><span>Delivery</span><strong>Confirm on WhatsApp</strong></div>
+          <div class="pd-service-note">
+            <p class="pd-service-title">What happens next</p>
+            <div class="pd-service-steps">
+              <span>Availability is confirmed personally.</span>
+              <span>Custom colors or packing can be discussed.</span>
+              <span>Payment and delivery details are shared on WhatsApp.</span>
+            </div>
           </div>
         </div>
       </div>
@@ -110,6 +113,7 @@ const route = useRoute()
 const shopName = import.meta.env.VITE_SHOP_NAME || 'Handmade Craft Shop'
 const phone = import.meta.env.VITE_WHATSAPP_PHONE || ''
 const upiId = import.meta.env.VITE_UPI_ID || 'yourupi@upi'
+const showUpiPayment = false
 
 const product = ref(null)
 const loading = ref(true)
@@ -514,31 +518,44 @@ async function loadProduct() {
   line-height: 1.5;
 }
 
-.trust-row {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
-}
-
-.trust-item {
-  display: grid;
-  gap: 4px;
-  padding: 12px;
+.pd-service-note {
+  padding: 16px;
   border: 1px solid #eadfd2;
-  border-radius: 14px;
-  background: #ffffff;
+  border-radius: 18px;
+  background: linear-gradient(180deg, #ffffff, #fff8ef);
 }
 
-.trust-item span {
+.pd-service-title {
+  margin: 0 0 10px;
   color: #79401f;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 900;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
-.trust-item strong {
-  color: #261f1a;
-  font-size: 13px;
+.pd-service-steps {
+  display: grid;
+  gap: 9px;
+}
+
+.pd-service-steps span {
+  position: relative;
+  padding-left: 18px;
+  color: #5f5147;
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.pd-service-steps span::before {
+  content: "";
+  position: absolute;
+  top: 0.65em;
+  left: 0;
+  width: 7px;
+  height: 7px;
+  border-radius: 99px;
+  background: #a85f33;
 }
 
 @media (max-width: 820px) {
@@ -549,10 +566,6 @@ async function loadProduct() {
 
   .pd-media {
     position: static;
-  }
-
-  .trust-row {
-    grid-template-columns: 1fr;
   }
 }
 

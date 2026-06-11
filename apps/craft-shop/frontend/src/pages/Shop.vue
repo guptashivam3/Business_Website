@@ -29,10 +29,23 @@
           </div>
         </div>
 
-        <div class="hero-badges">
-          <div class="hero-badge"><span>Handmade</span><strong>Small batch pieces</strong></div>
-          <div class="hero-badge"><span>Custom</span><strong>Orders welcome</strong></div>
-          <div class="hero-badge"><span>Delivery</span><strong>Confirm on WhatsApp</strong></div>
+        <div class="hero-order-card">
+          <p class="hero-order-label">Easy ordering</p>
+          <h2>Choose, customise, confirm.</h2>
+          <div class="hero-order-steps">
+            <div>
+              <span>01</span>
+              <p>Pick a ready design or share a similar reference.</p>
+            </div>
+            <div>
+              <span>02</span>
+              <p>Confirm color, size, packing and delivery details.</p>
+            </div>
+            <div>
+              <span>03</span>
+              <p>Place the final order directly with the owner on WhatsApp.</p>
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -315,30 +328,65 @@ async function loadProducts() {
   line-height: 1.7;
 }
 
-.hero-badges {
+.hero-order-card {
+  display: grid;
+  gap: 16px;
+  padding: 22px;
+  border: 1px solid rgba(234, 223, 210, 0.9);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 18px 50px rgba(65, 42, 24, 0.09);
+  backdrop-filter: blur(14px);
+}
+
+.hero-order-label {
+  margin: 0;
+  color: #79401f;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.hero-order-card h2 {
+  margin: 0;
+  color: #241f1a;
+  font-size: 28px;
+  line-height: 1.1;
+  font-weight: 900;
+}
+
+.hero-order-steps {
   display: grid;
   gap: 12px;
 }
 
-.hero-badge {
+.hero-order-steps div {
   display: grid;
-  gap: 4px;
-  padding: 18px;
-  border: 1px solid #eadfd2;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.78);
-  box-shadow: 0 18px 50px rgba(65, 42, 24, 0.09);
+  grid-template-columns: 38px 1fr;
+  gap: 12px;
+  align-items: start;
+  padding-top: 12px;
+  border-top: 1px solid #eadfd2;
 }
 
-.hero-badge span {
+.hero-order-steps span {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  background: #fff3e4;
   color: #79401f;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 900;
-  text-transform: uppercase;
 }
 
-.hero-badge strong {
-  color: #261f1a;
+.hero-order-steps p {
+  margin: 0;
+  color: #5f5147;
+  font-size: 14px;
+  line-height: 1.55;
 }
 
 .shop-section {
@@ -645,8 +693,8 @@ async function loadProducts() {
     grid-template-columns: 1fr;
   }
 
-  .hero-badges {
-    grid-template-columns: 1fr;
+  .hero-order-card {
+    padding: 18px;
   }
 }
 
