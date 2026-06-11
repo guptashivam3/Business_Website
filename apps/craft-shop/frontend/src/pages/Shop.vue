@@ -54,18 +54,31 @@
         </div>
 
         <div v-if="heroPrimaryProduct" class="hero-showcase">
-          <RouterLink :to="`/product/${heroPrimaryProduct.slug}`" class="hero-feature-card">
-            <div class="hero-feature-img-wrap">
-              <img :src="heroPrimaryProduct.image_url" :alt="heroPrimaryProduct.name" />
-            </div>
-            <div class="hero-feature-info">
-              <span>{{ categoryName(heroPrimaryProduct) }}</span>
-              <h2>{{ heroPrimaryProduct.name }}</h2>
-              <p v-if="heroPrimaryProduct.description">{{ heroPrimaryProduct.description }}</p>
-              <strong>Rs {{ Number(heroPrimaryProduct.price).toFixed(2) }}</strong>
-              <small>View product details</small>
-            </div>
-          </RouterLink>
+          <Transition name="hero-slide" mode="out-in">
+            <RouterLink :key="heroPrimaryProduct.id" :to="`/product/${heroPrimaryProduct.slug}`" class="hero-feature-card">
+              <div class="hero-feature-img-wrap">
+                <img :src="heroPrimaryProduct.image_url" :alt="heroPrimaryProduct.name" />
+              </div>
+              <div class="hero-feature-info">
+                <span>{{ categoryName(heroPrimaryProduct) }}</span>
+                <h2>{{ heroPrimaryProduct.name }}</h2>
+                <p v-if="heroPrimaryProduct.description">{{ heroPrimaryProduct.description }}</p>
+                <strong>Rs {{ Number(heroPrimaryProduct.price).toFixed(2) }}</strong>
+                <small>View product details</small>
+              </div>
+            </RouterLink>
+          </Transition>
+
+          <div v-if="heroSlides.length > 1" class="hero-dots" aria-label="Featured product slides">
+            <button
+              v-for="(product, index) in heroSlides"
+              :key="product.id"
+              type="button"
+              :class="{ active: activeHeroIndex === index }"
+              :aria-label="`Show ${product.name}`"
+              @click="activeHeroIndex = index"
+            ></button>
+          </div>
         </div>
       </div>
     </section>
@@ -79,20 +92,25 @@
           Each order can be adapted by color, budget, occasion, and packing style.
         </p>
       </div>
-      <div class="promise-card">
-        <span>01</span>
-        <h3>Choose a design</h3>
-        <p>Pick from products or gallery inspiration.</p>
-      </div>
-      <div class="promise-card">
-        <span>02</span>
-        <h3>Confirm on WhatsApp</h3>
-        <p>Discuss budget, availability, timing, and delivery.</p>
-      </div>
-      <div class="promise-card">
-        <span>03</span>
-        <h3>Receive handmade work</h3>
-        <p>Made with care for gifting, rituals, and celebrations.</p>
+
+      <div class="process-slider">
+        <Transition name="process-slide" mode="out-in">
+          <div :key="activeProcessIndex" class="process-panel">
+            <span>{{ processSteps[activeProcessIndex].number }}</span>
+            <h3>{{ processSteps[activeProcessIndex].title }}</h3>
+            <p>{{ processSteps[activeProcessIndex].description }}</p>
+          </div>
+        </Transition>
+        <div class="process-dots" aria-label="Ordering steps">
+          <button
+            v-for="(step, index) in processSteps"
+            :key="step.number"
+            type="button"
+            :class="{ active: activeProcessIndex === index }"
+            :aria-label="`Show step ${step.number}`"
+            @click="activeProcessIndex = index"
+          ></button>
+        </div>
       </div>
     </section>
 
@@ -233,7 +251,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { supabase } from '../lib/supabase.js'
 
 const shopName = import.meta.env.VITE_SHOP_NAME || 'Handmade Craft Shop'
@@ -243,6 +261,28 @@ const activeCategory = ref('All')
 const searchQuery = ref('')
 const loading = ref(true)
 const currentYear = new Date().getFullYear()
+const activeHeroIndex = ref(0)
+const activeProcessIndex = ref(0)
+let heroTimer = null
+let processTimer = null
+
+const processSteps = [
+  {
+    number: '01',
+    title: 'Choose a design',
+    description: 'Pick from ready products or select an inspiration photo from the gallery.'
+  },
+  {
+    number: '02',
+    title: 'Confirm on WhatsApp',
+    description: 'Discuss budget, colors, packing, availability, timing, and delivery details.'
+  },
+  {
+    number: '03',
+    title: 'Receive handmade work',
+    description: 'Your piece is prepared with care for gifting, rituals, and family celebrations.'
+  }
+]
 
 function categoryName(product) {
   return product.category || 'Gifts'
@@ -276,18 +316,36 @@ const featuredProducts = computed(() => {
   return products.value.filter((product) => product.is_featured && product.is_available)
 })
 
-const heroShowcaseProducts = computed(() => {
+const heroSlides = computed(() => {
   const source = featuredProducts.value.length ? featuredProducts.value : products.value
-  return source.filter((product) => product.image_url).slice(0, 3)
+  return source.filter((product) => product.image_url).slice(0, 5)
 })
 
-const heroPrimaryProduct = computed(() => heroShowcaseProducts.value[0] || null)
+const heroPrimaryProduct = computed(() => {
+  if (!heroSlides.value.length) return null
+  return heroSlides.value[activeHeroIndex.value % heroSlides.value.length]
+})
 
 function whatsAppLink(message) {
   return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`
 }
 
-onMounted(loadProducts)
+onMounted(() => {
+  loadProducts()
+  heroTimer = setInterval(() => {
+    if (heroSlides.value.length > 1) {
+      activeHeroIndex.value = (activeHeroIndex.value + 1) % heroSlides.value.length
+    }
+  }, 4200)
+  processTimer = setInterval(() => {
+    activeProcessIndex.value = (activeProcessIndex.value + 1) % processSteps.length
+  }, 3600)
+})
+
+onUnmounted(() => {
+  clearInterval(heroTimer)
+  clearInterval(processTimer)
+})
 
 async function loadProducts() {
   loading.value = true
@@ -582,6 +640,7 @@ async function loadProducts() {
 }
 
 .hero-showcase {
+  position: relative;
   width: 100%;
 }
 
@@ -599,6 +658,25 @@ async function loadProducts() {
 .hero-feature-card:hover {
   box-shadow: 0 28px 70px rgba(65, 42, 24, 0.18);
   transform: translateY(-3px);
+}
+
+.hero-slide-enter-active,
+.hero-slide-leave-active,
+.process-slide-enter-active,
+.process-slide-leave-active {
+  transition: opacity 360ms ease, transform 360ms ease;
+}
+
+.hero-slide-enter-from,
+.process-slide-enter-from {
+  opacity: 0;
+  transform: translateX(24px);
+}
+
+.hero-slide-leave-to,
+.process-slide-leave-to {
+  opacity: 0;
+  transform: translateX(-24px);
 }
 
 .hero-feature-img-wrap {
@@ -664,18 +742,49 @@ async function loadProducts() {
   font-weight: 900;
 }
 
+.hero-dots,
+.process-dots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+.hero-dots {
+  position: absolute;
+  right: 0;
+  bottom: -26px;
+  left: 0;
+}
+
+.hero-dots button,
+.process-dots button {
+  width: 8px;
+  height: 8px;
+  border: 0;
+  border-radius: 999px;
+  background: #d8c8b8;
+  cursor: pointer;
+  transition: width 180ms ease, background 180ms ease;
+}
+
+.hero-dots button.active,
+.process-dots button.active {
+  width: 24px;
+  background: #a85f33;
+}
+
 .promise-section {
   display: grid;
-  grid-template-columns: minmax(0, 1.45fr) repeat(3, minmax(0, 1fr));
-  gap: 14px;
-  padding: 24px 0 6px;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 0.74fr);
+  gap: 16px;
+  padding: 42px 0 6px;
 }
 
 .promise-card {
-  min-height: 172px;
+  min-height: 240px;
   border: 1px solid #eadfd2;
   border-radius: 22px;
-  padding: 20px;
+  padding: 26px;
   background: rgba(255, 255, 255, 0.82);
   box-shadow: 0 14px 34px rgba(65, 42, 24, 0.07);
 }
@@ -686,7 +795,29 @@ async function loadProducts() {
     #ffffff;
 }
 
-.promise-card span {
+.process-slider {
+  position: relative;
+  display: grid;
+  align-items: stretch;
+  min-height: 240px;
+  overflow: hidden;
+  border: 1px solid #eadfd2;
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at 90% 10%, rgba(201, 168, 76, 0.18), transparent 10rem),
+    #ffffff;
+  box-shadow: 0 14px 34px rgba(65, 42, 24, 0.07);
+}
+
+.process-panel {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 240px;
+  padding: 28px;
+}
+
+.process-panel span {
   display: grid;
   place-items: center;
   width: 36px;
@@ -706,17 +837,26 @@ async function loadProducts() {
   line-height: 1.14;
 }
 
-.promise-card h3 {
+.process-panel h3 {
   margin: 0 0 8px;
   color: #241f1a;
-  font-size: 18px;
+  font-size: clamp(26px, 4vw, 38px);
+  line-height: 1.1;
 }
 
-.promise-card p {
+.promise-card p,
+.process-panel p {
   margin: 0;
   color: #6f6258;
-  font-size: 14px;
+  font-size: 15px;
   line-height: 1.65;
+}
+
+.process-dots {
+  position: absolute;
+  right: 0;
+  bottom: 18px;
+  left: 0;
 }
 
 .featured-section {
@@ -1284,6 +1424,29 @@ async function loadProducts() {
     font-size: 24px;
   }
 
+  .hero-dots {
+    bottom: -22px;
+  }
+
+  .promise-section {
+    padding-top: 34px;
+  }
+
+  .promise-card,
+  .process-slider,
+  .process-panel {
+    min-height: 220px;
+  }
+
+  .process-panel {
+    padding: 22px;
+    padding-bottom: 48px;
+  }
+
+  .process-panel h3 {
+    font-size: 26px;
+  }
+
   .featured-row,
   .product-grid,
   .skeleton-grid {
@@ -1322,11 +1485,19 @@ async function loadProducts() {
   .hero-text,
   .hero-showcase,
   .promise-card,
+  .process-panel,
   .featured-card,
   .product-card,
   .skeleton-media::after,
   .skeleton-line::after {
     animation: none;
+  }
+
+  .hero-slide-enter-active,
+  .hero-slide-leave-active,
+  .process-slide-enter-active,
+  .process-slide-leave-active {
+    transition: none;
   }
 
   .shop-btn,
