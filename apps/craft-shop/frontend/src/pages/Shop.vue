@@ -226,6 +226,12 @@
           <RouterLink to="/about">About Us</RouterLink>
           <RouterLink to="/gallery">Gallery</RouterLink>
           <a :href="whatsAppLink('Hi!')" target="_blank" rel="noopener">WhatsApp</a>
+          <a :href="`mailto:${ownerEmail}`" class="footer-contact-link">
+            <span>@</span>{{ ownerEmail }}
+          </a>
+          <a :href="instagramLink" target="_blank" rel="noopener" class="footer-contact-link">
+            <span>IG</span>{{ instagramHandle }}
+          </a>
         </div>
       </div>
       <p class="footer-copy">Copyright {{ currentYear }} {{ shopName }}. All rights reserved.</p>
@@ -239,7 +245,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, reactive, ref } from 'vue'
 import { supabase } from '../lib/supabase.js'
 
 const shopName = import.meta.env.VITE_SHOP_NAME || 'Laxmi Creations'
@@ -251,11 +257,18 @@ const loading = ref(true)
 const currentYear = new Date().getFullYear()
 const activeFeaturedIndex = ref(0)
 const activeProcessIndex = ref(0)
+const siteSettings = reactive({
+  owner_email: 'laxmigupta8888@gmail.com',
+  owner_instagram: 'laxmi_creations'
+})
 let featuredTimer = null
 let processTimer = null
 const isMobile = ref(false)
 
 const featuredPageSize = computed(() => (isMobile.value ? 1 : 4))
+const ownerEmail = computed(() => siteSettings.owner_email || 'laxmigupta8888@gmail.com')
+const instagramHandle = computed(() => cleanInstagramHandle(siteSettings.owner_instagram || 'laxmi_creations'))
+const instagramLink = computed(() => `https://www.instagram.com/${instagramHandle.value.replace('@', '')}`)
 
 const processSteps = [
   {
@@ -339,10 +352,16 @@ function whatsAppLink(message) {
   return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`
 }
 
+function cleanInstagramHandle(value) {
+  const handle = String(value || '').trim().replace(/^https?:\/\/(www\.)?instagram\.com\//, '').replace(/\/$/, '')
+  return handle.startsWith('@') ? handle : `@${handle}`
+}
+
 onMounted(() => {
   syncViewport()
   window.addEventListener('resize', syncViewport)
   loadProducts()
+  loadSiteSettings()
   featuredTimer = setInterval(() => {
     if (featuredPageCount.value > 1) {
       nextFeaturedSlide()
@@ -370,6 +389,11 @@ async function loadProducts() {
   if (error) console.error(error)
   products.value = data || []
   loading.value = false
+}
+
+async function loadSiteSettings() {
+  const { data, error } = await supabase.from('site_settings').select('owner_email, owner_instagram').eq('id', 'about').maybeSingle()
+  if (!error && data) Object.assign(siteSettings, data)
 }
 </script>
 
@@ -1234,11 +1258,30 @@ async function loadProducts() {
 .footer-links {
   display: flex;
   gap: 18px;
+  flex-wrap: wrap;
 }
 
 .footer-links a {
   color: #b5aaa1;
   font-weight: 800;
+}
+
+.footer-contact-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.footer-contact-link span {
+  display: grid;
+  place-items: center;
+  min-width: 25px;
+  height: 25px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 900;
 }
 
 .footer-copy {

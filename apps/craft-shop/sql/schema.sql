@@ -64,7 +64,6 @@ create table if not exists public.site_settings (
   owner_phone text default '+918793662673',
   owner_email text default 'laxmigupta8888@gmail.com',
   owner_instagram text default 'laxmi_creations',
-  owner_telegram text default 'laxmi_creations',
   owner_photo_url text,
   about_heading text default 'Handmade gifts crafted by Laxmi Gupta',
   about_intro text default 'Laxmi Creations is a small handmade craft studio for thoughtful gifting, festive hampers, chocolate garlands, decorated trays, potli favors, and custom celebration pieces.',
@@ -74,9 +73,6 @@ create table if not exists public.site_settings (
 
 alter table public.site_settings
 add column if not exists owner_instagram text default 'laxmi_creations';
-
-alter table public.site_settings
-add column if not exists owner_telegram text default 'laxmi_creations';
 
 create table if not exists public.admin_users (
   email text primary key,

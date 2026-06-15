@@ -220,10 +220,6 @@
               <label>Instagram</label>
               <input v-model="siteForm.owner_instagram" placeholder="laxmi_creations" />
             </div>
-            <div class="field">
-              <label>Telegram</label>
-              <input v-model="siteForm.owner_telegram" placeholder="laxmi_creations" />
-            </div>
             <div class="field full">
               <label>About Heading</label>
               <input v-model="siteForm.about_heading" placeholder="Handmade gifts crafted by Laxmi Gupta" />
@@ -528,7 +524,6 @@ function defaultSiteForm() {
     owner_phone: '+918793662673',
     owner_email: 'laxmigupta8888@gmail.com',
     owner_instagram: 'laxmi_creations',
-    owner_telegram: 'laxmi_creations',
     owner_photo_url: '',
     about_heading: 'Handmade gifts crafted by Laxmi Gupta',
     about_intro: 'Laxmi Creations is a small handmade craft studio for thoughtful gifting, festive hampers, chocolate garlands, decorated trays, potli favors, and custom celebration pieces.',
@@ -855,9 +850,8 @@ async function saveSiteSettings() {
 
   let { error } = await supabase.from('site_settings').upsert(payload)
 
-  if (error?.message?.includes('owner_instagram') || error?.message?.includes('owner_telegram')) {
+  if (error?.message?.includes('owner_instagram')) {
     delete payload.owner_instagram
-    delete payload.owner_telegram
     const fallback = await supabase.from('site_settings').upsert(payload)
     error = fallback.error
   }
