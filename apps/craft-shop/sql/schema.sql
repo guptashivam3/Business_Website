@@ -53,9 +53,13 @@ create table if not exists public.gallery_items (
   description text,
   category text,
   image_url text not null,
+  image_urls text[] default '{}',
   is_visible boolean default true,
   created_at timestamptz default now()
 );
+
+alter table public.gallery_items
+add column if not exists image_urls text[] default '{}';
 
 create table if not exists public.site_settings (
   id text primary key default 'about',

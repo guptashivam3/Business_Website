@@ -37,7 +37,8 @@
       <div v-else class="gallery-grid">
         <article v-for="item in items" :key="item.id" class="gallery-item" v-reveal @click="openLightbox(item)">
           <div class="gallery-img-wrap">
-            <img :src="item.image_url" :alt="item.title" class="gallery-img" loading="lazy" />
+            <img :src="mainGalleryImage(item)" :alt="item.title" class="gallery-img" loading="lazy" />
+            <span v-if="galleryImages(item).length > 1" class="gallery-count">{{ galleryImages(item).length }} photos</span>
             <div class="gallery-overlay">
               <span class="gallery-zoom">View</span>
             </div>
@@ -54,7 +55,22 @@
     <div v-if="lightboxItem" class="lightbox" @click.self="closeLightbox">
       <button class="lightbox-close" type="button" @click="closeLightbox">Close</button>
       <div class="lightbox-inner">
-        <img :src="lightboxItem.image_url" :alt="lightboxItem.title" class="lightbox-img" />
+        <div class="lightbox-media">
+          <img :src="activeLightboxImage" :alt="lightboxItem.title" class="lightbox-img" />
+          <div v-if="lightboxImages.length > 1" class="lightbox-thumbs" aria-label="Gallery photos">
+            <button
+              v-for="(url, index) in lightboxImages"
+              :key="url"
+              type="button"
+              class="lightbox-thumb"
+              :class="{ active: activeLightboxImage === url }"
+              :aria-label="`Show gallery photo ${index + 1}`"
+              @click="activeLightboxImage = url"
+            >
+              <img :src="url" :alt="`${lightboxItem.title} photo ${index + 1}`" />
+            </button>
+          </div>
+        </div>
         <div class="lightbox-info">
           <p v-if="lightboxItem.category" class="gallery-cat">{{ lightboxItem.category }}</p>
           <h3 class="lightbox-title">{{ lightboxItem.title }}</h3>
@@ -89,6 +105,9 @@ const phone = import.meta.env.VITE_WHATSAPP_PHONE || ''
 const items = ref([])
 const loading = ref(true)
 const lightboxItem = ref(null)
+const activeLightboxImage = ref('')
+
+const lightboxImages = computed(() => (lightboxItem.value ? galleryImages(lightboxItem.value) : []))
 
 const customIdeaLink = computed(() => {
   const message = 'Hi! I saw your gallery and have a custom order idea.'
@@ -101,18 +120,28 @@ function whatsAppLink(message) {
 
 function customOrderLink(item) {
   return whatsAppLink(
-    `Hi! I saw this gallery design and would like something similar.\n\nDesign: ${item.title}\nImage: ${item.image_url}\n\nPlease share options and pricing.`
+    `Hi! I saw this gallery design and would like something similar.\n\nDesign: ${item.title}\nImage: ${mainGalleryImage(item)}\n\nPlease share options and pricing.`
   )
 }
 
 function openLightbox(item) {
   lightboxItem.value = item
+  activeLightboxImage.value = mainGalleryImage(item)
   document.body.style.overflow = 'hidden'
 }
 
 function closeLightbox() {
   lightboxItem.value = null
+  activeLightboxImage.value = ''
   document.body.style.overflow = ''
+}
+
+function galleryImages(item) {
+  return [...new Set([...(Array.isArray(item.image_urls) ? item.image_urls : []), item.image_url].filter(Boolean))]
+}
+
+function mainGalleryImage(item) {
+  return galleryImages(item)[0] || ''
 }
 
 onUnmounted(() => {
@@ -338,6 +367,19 @@ async function loadGallery() {
   background: #f2e5d7;
 }
 
+.gallery-count {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 1;
+  border-radius: 999px;
+  padding: 5px 9px;
+  background: rgba(26, 23, 20, 0.72);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 900;
+}
+
 .gallery-img {
   display: block;
   width: 100%;
@@ -446,11 +488,44 @@ async function loadGallery() {
   box-shadow: 0 28px 80px rgba(0, 0, 0, 0.34);
 }
 
+.lightbox-media {
+  background: #f2e5d7;
+}
+
 .lightbox-img {
+  display: block;
   width: 100%;
   height: min(76vh, 680px);
   object-fit: cover;
   background: #f2e5d7;
+}
+
+.lightbox-thumbs {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(58px, 1fr));
+  gap: 8px;
+  padding: 10px;
+  background: rgba(255, 253, 248, 0.96);
+}
+
+.lightbox-thumb {
+  overflow: hidden;
+  border: 2px solid transparent;
+  border-radius: 10px;
+  aspect-ratio: 1 / 1;
+  padding: 0;
+  background: #f2e5d7;
+  cursor: pointer;
+}
+
+.lightbox-thumb.active {
+  border-color: #a85f33;
+}
+
+.lightbox-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .lightbox-info {

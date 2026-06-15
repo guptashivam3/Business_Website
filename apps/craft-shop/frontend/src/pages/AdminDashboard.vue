@@ -359,18 +359,18 @@
               <textarea v-model="galleryForm.description" rows="2" placeholder="Brief description of the piece"></textarea>
             </div>
             <div class="field full">
-              <label>{{ editingGallery ? 'Photo *' : 'Photos *' }}</label>
+              <label>Photos *</label>
               <div class="upload-zone" :class="{ 'has-file': galleryForm.image_urls.length }" @click="triggerUpload('gallery')">
-                <input ref="galleryInput" type="file" accept="image/*" :multiple="!editingGallery" @change="uploadFile($event, 'gallery')" />
+                <input ref="galleryInput" type="file" accept="image/*" multiple @change="uploadFile($event, 'gallery')" />
                 <div class="upload-placeholder">
-                  <strong>{{ uploadingGallery ? 'Uploading...' : editingGallery ? 'Click to replace photo' : 'Click to upload photos' }}</strong>
-                  <span>{{ editingGallery ? 'Replaces this gallery item photo.' : 'Select one or more finished work photos.' }}</span>
+                  <strong>{{ uploadingGallery ? 'Uploading...' : 'Click to upload photos' }}</strong>
+                  <span>Select one or more photos for this same gallery item. First photo is the main image.</span>
                 </div>
               </div>
               <div v-if="galleryForm.image_urls.length" class="photo-preview-grid">
                 <div v-for="(url, index) in galleryForm.image_urls" :key="url" class="photo-preview">
                   <img :src="url" :alt="`Gallery photo ${index + 1}`" />
-                  <span v-if="index === 0 && editingGallery">Current</span>
+                  <span v-if="index === 0">Main</span>
                   <button type="button" class="upload-remove" @click.stop="removeGalleryPhoto(index)">Remove</button>
                 </div>
               </div>
@@ -728,9 +728,23 @@ async function saveGalleryItem() {
     is_visible: galleryForm.is_visible
   }
 
-  const result = editingGallery.value
-    ? await supabase.from('gallery_items').update({ ...basePayload, image_url: imageUrls[0] }).eq('id', editingGallery.value.id)
-    : await supabase.from('gallery_items').insert(imageUrls.map((imageUrl) => ({ ...basePayload, image_url: imageUrl })))
+  const payload = {
+    ...basePayload,
+    image_url: imageUrls[0],
+    image_urls: imageUrls
+  }
+
+  let result = editingGallery.value
+    ? await supabase.from('gallery_items').update(payload).eq('id', editingGallery.value.id)
+    : await supabase.from('gallery_items').insert([payload])
+
+  if (isMissingImageUrlsError(result.error)) {
+    const fallbackPayload = { ...payload }
+    delete fallbackPayload.image_urls
+    result = editingGallery.value
+      ? await supabase.from('gallery_items').update(fallbackPayload).eq('id', editingGallery.value.id)
+      : await supabase.from('gallery_items').insert([fallbackPayload])
+  }
 
   const { error } = result
 
@@ -742,9 +756,8 @@ async function saveGalleryItem() {
   }
 
   const wasEditing = Boolean(editingGallery.value)
-  const addedCount = imageUrls.length
   closeGalleryForm()
-  showToast(wasEditing ? 'Gallery item updated.' : `${addedCount} gallery photo${addedCount === 1 ? '' : 's'} added.`)
+  showToast(wasEditing ? 'Gallery item updated.' : 'Gallery item added.')
   await loadGallery()
 }
 
@@ -822,7 +835,7 @@ async function uploadFile(event, type) {
     }
     if (type === 'video') productForm.video_url = uploadedUrls[0] || ''
     if (type === 'gallery') {
-      galleryForm.image_urls = editingGallery.value ? uploadedUrls.slice(0, 1) : [...normalizeGalleryPhotos(galleryForm), ...uploadedUrls]
+      galleryForm.image_urls = [...normalizeGalleryPhotos(galleryForm), ...uploadedUrls]
       galleryForm.image_url = galleryForm.image_urls[0] || ''
     }
     if (type === 'owner') siteForm.owner_photo_url = uploadedUrls[0] || ''
