@@ -609,6 +609,10 @@ function isMissingImageUrlsError(error) {
   return error?.message?.includes("'image_urls' column") || error?.message?.includes("Could not find the 'image_urls'")
 }
 
+function imageUrlsSchemaMessage(kind) {
+  return `Multiple ${kind} photos need the image_urls column in Supabase. Run the latest schema.sql, then try saving again.`
+}
+
 async function saveProduct() {
   if (!productForm.name || productForm.price === '') {
     formError.value = 'Name and price are required.'
@@ -629,20 +633,23 @@ async function saveProduct() {
     error = result.error
   }
 
-  if (isMissingCategoryError(error) || isMissingImageUrlsError(error)) {
-    const fallbackPayload = productPayload(!isMissingCategoryError(error))
-    if (isMissingImageUrlsError(error)) delete fallbackPayload.image_urls
+  if (isMissingImageUrlsError(error)) {
+    saving.value = false
+    formError.value = imageUrlsSchemaMessage('product')
+    return
+  }
+
+  if (isMissingCategoryError(error)) {
+    const fallbackPayload = productPayload(false)
     const fallbackResult = editingProduct.value
       ? await supabase.from('products').update(fallbackPayload).eq('id', editingProduct.value.id)
       : await supabase.from('products').insert([fallbackPayload])
     error = fallbackResult.error
 
     if (isMissingImageUrlsError(error)) {
-      delete fallbackPayload.image_urls
-      const secondFallbackResult = editingProduct.value
-        ? await supabase.from('products').update(fallbackPayload).eq('id', editingProduct.value.id)
-        : await supabase.from('products').insert([fallbackPayload])
-      error = secondFallbackResult.error
+      saving.value = false
+      formError.value = imageUrlsSchemaMessage('product')
+      return
     }
   }
 
@@ -739,11 +746,9 @@ async function saveGalleryItem() {
     : await supabase.from('gallery_items').insert([payload])
 
   if (isMissingImageUrlsError(result.error)) {
-    const fallbackPayload = { ...payload }
-    delete fallbackPayload.image_urls
-    result = editingGallery.value
-      ? await supabase.from('gallery_items').update(fallbackPayload).eq('id', editingGallery.value.id)
-      : await supabase.from('gallery_items').insert([fallbackPayload])
+    saving.value = false
+    formError.value = imageUrlsSchemaMessage('gallery')
+    return
   }
 
   const { error } = result
