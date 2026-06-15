@@ -1,7 +1,7 @@
 <template>
   <RouterLink class="card product-card" :to="`/product/${product.slug}`">
     <div class="product-media">
-      <img class="product-img" :src="product.image_url || placeholder" :alt="product.name" />
+      <img class="product-img" :src="mainImage || placeholder" :alt="product.name" />
       <span v-if="!product.is_available" class="media-badge">Sold out</span>
       <span v-else-if="product.is_featured" class="media-badge">Featured</span>
     </div>
@@ -17,12 +17,15 @@
 </template>
 
 <script setup>
-defineProps({
+import { computed } from 'vue'
+
+const props = defineProps({
   product: {
     type: Object,
     required: true
   }
 })
 
+const mainImage = computed(() => props.product.image_url || (Array.isArray(props.product.image_urls) ? props.product.image_urls[0] : ''))
 const placeholder = 'https://placehold.co/600x600?text=Handmade'
 </script>

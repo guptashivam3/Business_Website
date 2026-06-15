@@ -35,11 +35,25 @@
       <div class="pd-layout">
         <div class="pd-media">
           <div class="pd-img-wrap">
-            <button v-if="product.image_url" class="pd-img-button" type="button" @click="imageOpen = true">
-              <img :src="product.image_url" :alt="product.name" class="pd-img" />
+            <button v-if="activeImage" class="pd-img-button" type="button" @click="imageOpen = true">
+              <img :src="activeImage" :alt="product.name" class="pd-img" />
               <span>View larger</span>
             </button>
             <div v-else class="pd-img-placeholder">Image</div>
+          </div>
+
+          <div v-if="productImages.length > 1" class="pd-thumbs" aria-label="Product photos">
+            <button
+              v-for="(url, index) in productImages"
+              :key="url"
+              type="button"
+              class="pd-thumb"
+              :class="{ active: activeImage === url }"
+              :aria-label="`Show product photo ${index + 1}`"
+              @click="activeImage = url"
+            >
+              <img :src="url" :alt="`${product.name} photo ${index + 1}`" />
+            </button>
           </div>
 
           <div v-if="product.video_url" class="pd-video-wrap">
@@ -113,9 +127,9 @@
       </div>
     </main>
 
-    <div v-if="imageOpen && product?.image_url" class="image-viewer" @click.self="imageOpen = false">
+    <div v-if="imageOpen && activeImage" class="image-viewer" @click.self="imageOpen = false">
       <button class="image-viewer-close" type="button" @click="imageOpen = false">Close</button>
-      <img :src="product.image_url" :alt="product.name" />
+      <img :src="activeImage" :alt="product.name" />
     </div>
   </div>
 </template>
@@ -126,7 +140,7 @@ import { useRoute } from 'vue-router'
 import { supabase } from '../lib/supabase.js'
 
 const route = useRoute()
-const shopName = import.meta.env.VITE_SHOP_NAME || 'Handmade Craft Shop'
+const shopName = import.meta.env.VITE_SHOP_NAME || 'Laxmi Creations'
 const phone = import.meta.env.VITE_WHATSAPP_PHONE || ''
 const upiId = import.meta.env.VITE_UPI_ID || 'yourupi@upi'
 const showUpiPayment = false
@@ -135,6 +149,12 @@ const product = ref(null)
 const loading = ref(true)
 const copied = ref(false)
 const imageOpen = ref(false)
+const activeImage = ref('')
+
+const productImages = computed(() => {
+  if (!product.value) return []
+  return [...new Set([...(Array.isArray(product.value.image_urls) ? product.value.image_urls : []), product.value.image_url].filter(Boolean))]
+})
 
 const waOrderLink = computed(() => {
   const message = `Hi! I would like to order:\n\n${product.value?.name} - Rs ${product.value?.price}\n\nPlease confirm availability and delivery details.`
@@ -166,6 +186,7 @@ async function loadProduct() {
 
   if (error) console.error(error)
   product.value = data || null
+  activeImage.value = productImages.value[0] || ''
   loading.value = false
 }
 </script>
@@ -382,6 +403,32 @@ async function loadProduct() {
   border-radius: 18px;
   background: #ffffff;
   box-shadow: 0 16px 42px rgba(65, 42, 24, 0.08);
+}
+
+.pd-thumbs {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+  gap: 10px;
+}
+
+.pd-thumb {
+  overflow: hidden;
+  border: 2px solid transparent;
+  border-radius: 12px;
+  aspect-ratio: 1 / 1;
+  padding: 0;
+  background: #f2e5d7;
+  cursor: pointer;
+}
+
+.pd-thumb.active {
+  border-color: #a85f33;
+}
+
+.pd-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .pd-video-label {

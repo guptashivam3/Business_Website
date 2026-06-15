@@ -58,7 +58,7 @@ import { useRouter } from 'vue-router'
 import { supabase } from '../lib/supabase.js'
 
 const router = useRouter()
-const shopName = import.meta.env.VITE_SHOP_NAME || 'Handmade Craft Shop'
+const shopName = import.meta.env.VITE_SHOP_NAME || 'Laxmi Creations'
 const email = ref('')
 const password = ref('')
 const loading = ref(false)

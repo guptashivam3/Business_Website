@@ -1,4 +1,4 @@
--- Handmade Craft Shop Supabase Schema
+-- Laxmi Creations Supabase Schema
 
 create extension if not exists "uuid-ossp";
 create extension if not exists "pgcrypto";
@@ -20,6 +20,7 @@ create table if not exists public.products (
   category text,
   category_id uuid references public.categories(id) on delete set null,
   image_url text,
+  image_urls text[] default '{}',
   video_url text,
   is_available boolean default true,
   is_featured boolean default false,
@@ -36,6 +37,9 @@ add column if not exists category_id uuid references public.categories(id) on de
 
 alter table public.products
 add column if not exists video_url text;
+
+alter table public.products
+add column if not exists image_urls text[] default '{}';
 
 alter table public.products
 add column if not exists sort_order integer default 0;
@@ -59,12 +63,20 @@ create table if not exists public.site_settings (
   owner_name text default 'Laxmi Gupta',
   owner_phone text default '+918793662673',
   owner_email text default 'laxmigupta8888@gmail.com',
+  owner_instagram text default 'laxmi_creations',
+  owner_telegram text default 'laxmi_creations',
   owner_photo_url text,
   about_heading text default 'Handmade gifts crafted by Laxmi Gupta',
   about_intro text default 'Laxmi Creations is a small handmade craft studio for thoughtful gifting, festive hampers, chocolate garlands, decorated trays, potli favors, and custom celebration pieces.',
   about_story text default 'Every order is handled personally, from choosing the color theme to arranging the final packing. The goal is simple: make gifting feel warm, beautiful, and easy for families who want something more personal than a ready-made store item.',
   updated_at timestamptz default now()
 );
+
+alter table public.site_settings
+add column if not exists owner_instagram text default 'laxmi_creations';
+
+alter table public.site_settings
+add column if not exists owner_telegram text default 'laxmi_creations';
 
 create table if not exists public.admin_users (
   email text primary key,

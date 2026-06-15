@@ -84,7 +84,7 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { supabase } from '../lib/supabase.js'
 
-const shopName = import.meta.env.VITE_SHOP_NAME || 'Handmade Craft Shop'
+const shopName = import.meta.env.VITE_SHOP_NAME || 'Laxmi Creations'
 const phone = import.meta.env.VITE_WHATSAPP_PHONE || ''
 const items = ref([])
 const loading = ref(true)

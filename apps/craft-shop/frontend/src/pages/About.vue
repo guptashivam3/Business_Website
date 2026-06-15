@@ -88,8 +88,16 @@
               <strong>{{ displayPhone }}</strong>
             </a>
             <a :href="`mailto:${ownerEmail}`" class="contact-card">
-              <span>Email</span>
+              <span class="contact-icon">Gmail</span>
               <strong>{{ siteSettings.owner_email }}</strong>
+            </a>
+            <a :href="instagramLink" target="_blank" rel="noopener" class="contact-card">
+              <span class="contact-icon">Instagram</span>
+              <strong>{{ instagramHandle }}</strong>
+            </a>
+            <a :href="telegramLink" target="_blank" rel="noopener" class="contact-card">
+              <span class="contact-icon">Telegram</span>
+              <strong>{{ telegramHandle }}</strong>
             </a>
             <a :href="whatsAppLink('Hi Laxmi ji, I saw your website and want to place a custom order.')" target="_blank" rel="noopener" class="contact-card highlight">
               <span>WhatsApp</span>
@@ -112,6 +120,8 @@ const siteSettings = reactive({
   owner_name: 'Laxmi Gupta',
   owner_phone: '+918793662673',
   owner_email: 'laxmigupta8888@gmail.com',
+  owner_instagram: 'laxmi_creations',
+  owner_telegram: 'laxmi_creations',
   owner_photo_url: '',
   about_heading: 'Handmade gifts crafted by Laxmi Gupta',
   about_intro: 'Laxmi Creations is a small handmade craft studio for thoughtful gifting, festive hampers, chocolate garlands, decorated trays, potli favors, and custom celebration pieces.',
@@ -121,9 +131,18 @@ const siteSettings = reactive({
 const ownerPhone = computed(() => siteSettings.owner_phone || '+918793662673')
 const ownerEmail = computed(() => siteSettings.owner_email || 'laxmigupta8888@gmail.com')
 const displayPhone = computed(() => ownerPhone.value.replace(/^(\+91)(\d{5})(\d{5})$/, '$1 $2 $3'))
+const instagramHandle = computed(() => cleanHandle(siteSettings.owner_instagram || 'laxmi_creations'))
+const telegramHandle = computed(() => cleanHandle(siteSettings.owner_telegram || 'laxmi_creations'))
+const instagramLink = computed(() => `https://www.instagram.com/${instagramHandle.value.replace('@', '')}`)
+const telegramLink = computed(() => `https://t.me/${telegramHandle.value.replace('@', '')}`)
 
 function whatsAppLink(message) {
   return `https://wa.me/${ownerPhone.value.replace('+', '')}?text=${encodeURIComponent(message)}`
+}
+
+function cleanHandle(value) {
+  const handle = String(value || '').trim().replace(/^https?:\/\/(www\.)?(instagram\.com|t\.me)\//, '').replace(/\/$/, '')
+  return handle.startsWith('@') ? handle : `@${handle}`
 }
 
 onMounted(loadSiteSettings)
@@ -415,6 +434,38 @@ async function loadSiteSettings() {
 .contact-card strong {
   overflow-wrap: anywhere;
   font-size: 18px;
+}
+
+.contact-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.contact-icon::before {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.contact-card:nth-child(2) .contact-icon::before {
+  content: "G";
+}
+
+.contact-card:nth-child(3) .contact-icon::before {
+  content: "IG";
+}
+
+.contact-card:nth-child(4) .contact-icon::before {
+  content: "TG";
 }
 
 @media (max-width: 780px) {

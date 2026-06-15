@@ -103,7 +103,7 @@
           <div v-for="product in filteredProducts" :key="product.id" class="products-row">
             <div class="products-row-info">
               <div class="products-row-img-wrap">
-                <img v-if="product.image_url" :src="product.image_url" :alt="product.name" class="products-row-img" />
+                <img v-if="mainProductImage(product)" :src="mainProductImage(product)" :alt="product.name" class="products-row-img" />
                 <span v-else class="products-row-img-placeholder">Image</span>
               </div>
               <div>
@@ -216,6 +216,14 @@
               <label>Email</label>
               <input v-model="siteForm.owner_email" type="email" placeholder="laxmigupta8888@gmail.com" />
             </div>
+            <div class="field">
+              <label>Instagram</label>
+              <input v-model="siteForm.owner_instagram" placeholder="laxmi_creations" />
+            </div>
+            <div class="field">
+              <label>Telegram</label>
+              <input v-model="siteForm.owner_telegram" placeholder="laxmi_creations" />
+            </div>
             <div class="field full">
               <label>About Heading</label>
               <input v-model="siteForm.about_heading" placeholder="Handmade gifts crafted by Laxmi Gupta" />
@@ -286,16 +294,19 @@
               </select>
             </div>
             <div class="field full">
-              <label>Product Photo</label>
-              <div class="upload-zone" :class="{ 'has-file': productForm.image_url }" @click="triggerUpload('image')">
-                <input ref="imageInput" type="file" accept="image/*" @change="uploadFile($event, 'image')" />
-                <div v-if="productForm.image_url" class="upload-preview">
-                  <img :src="productForm.image_url" alt="Product preview" />
-                  <button type="button" class="upload-remove" @click.stop="productForm.image_url = ''">Remove</button>
+              <label>Product Photos</label>
+              <div class="upload-zone" :class="{ 'has-file': productForm.image_urls.length }" @click="triggerUpload('image')">
+                <input ref="imageInput" type="file" accept="image/*" multiple @change="uploadFile($event, 'image')" />
+                <div class="upload-placeholder">
+                  <strong>{{ uploadingImage ? 'Uploading...' : 'Click to upload photos' }}</strong>
+                  <span>Select one or more JPG/PNG photos. First photo is the main shop image.</span>
                 </div>
-                <div v-else class="upload-placeholder">
-                  <strong>{{ uploadingImage ? 'Uploading...' : 'Click to upload photo' }}</strong>
-                  <span>JPG or PNG recommended</span>
+              </div>
+              <div v-if="productForm.image_urls.length" class="photo-preview-grid">
+                <div v-for="(url, index) in productForm.image_urls" :key="url" class="photo-preview">
+                  <img :src="url" :alt="`Product photo ${index + 1}`" />
+                  <span v-if="index === 0">Main</span>
+                  <button type="button" class="upload-remove" @click.stop="removeProductPhoto(index)">Remove</button>
                 </div>
               </div>
             </div>
@@ -309,7 +320,7 @@
                 </div>
                 <div v-else class="upload-placeholder">
                   <strong>{{ uploadingVideo ? 'Uploading...' : 'Click to upload video' }}</strong>
-                  <span>Short detail video, optional</span>
+                  <span>Short compressed video, optional. If it exceeds limits, trim or compress it first.</span>
                 </div>
               </div>
             </div>
@@ -411,7 +422,7 @@ import { useRouter } from 'vue-router'
 import { supabase } from '../lib/supabase.js'
 
 const router = useRouter()
-const shopName = import.meta.env.VITE_SHOP_NAME || 'Handmade Craft Shop'
+const shopName = import.meta.env.VITE_SHOP_NAME || 'Laxmi Creations'
 const tab = ref('products')
 
 const products = ref([])
@@ -462,7 +473,7 @@ const filteredProducts = computed(() => {
       (productFilter.value === 'available' && product.is_available) ||
       (productFilter.value === 'sold' && !product.is_available) ||
       (productFilter.value === 'featured' && product.is_featured) ||
-      (productFilter.value === 'missingImage' && !product.image_url)
+      (productFilter.value === 'missingImage' && !mainProductImage(product))
 
     return matchesSearch && matchesFilter
   })
@@ -491,6 +502,7 @@ function defaultProductForm() {
     price: '',
     category: '',
     image_url: '',
+    image_urls: [],
     video_url: '',
     is_available: true,
     is_featured: false
@@ -515,6 +527,8 @@ function defaultSiteForm() {
     owner_name: 'Laxmi Gupta',
     owner_phone: '+918793662673',
     owner_email: 'laxmigupta8888@gmail.com',
+    owner_instagram: 'laxmi_creations',
+    owner_telegram: 'laxmi_creations',
     owner_photo_url: '',
     about_heading: 'Handmade gifts crafted by Laxmi Gupta',
     about_intro: 'Laxmi Creations is a small handmade craft studio for thoughtful gifting, festive hampers, chocolate garlands, decorated trays, potli favors, and custom celebration pieces.',
@@ -542,6 +556,10 @@ function slugify(value) {
     .replace(/(^-|-$)/g, '')
 }
 
+function mainProductImage(product) {
+  return product.image_url || (Array.isArray(product.image_urls) ? product.image_urls[0] : '')
+}
+
 async function logout() {
   await supabase.auth.signOut()
   router.push('/admin/login')
@@ -549,7 +567,10 @@ async function logout() {
 
 function openProductForm(product) {
   editingProduct.value = product
-  resetReactive(productForm, product ? { ...defaultProductForm(), ...product } : defaultProductForm())
+  const nextProduct = product ? { ...defaultProductForm(), ...product } : defaultProductForm()
+  nextProduct.image_urls = normalizeProductPhotos(nextProduct)
+  nextProduct.image_url = nextProduct.image_urls[0] || ''
+  resetReactive(productForm, nextProduct)
   formError.value = ''
   showProductForm.value = true
 }
@@ -561,12 +582,14 @@ function closeProductForm() {
 }
 
 function productPayload(includeCategory = true) {
+  const imageUrls = normalizeProductPhotos(productForm)
   const payload = {
     name: productForm.name,
     slug: slugify(productForm.name),
     description: productForm.description,
     price: Number(productForm.price || 0),
-    image_url: productForm.image_url,
+    image_url: imageUrls[0] || '',
+    image_urls: imageUrls,
     video_url: productForm.video_url,
     is_available: productForm.is_available,
     is_featured: productForm.is_featured,
@@ -579,6 +602,10 @@ function productPayload(includeCategory = true) {
 
 function isMissingCategoryError(error) {
   return error?.message?.includes("'category' column")
+}
+
+function isMissingImageUrlsError(error) {
+  return error?.message?.includes("'image_urls' column") || error?.message?.includes("Could not find the 'image_urls'")
 }
 
 async function saveProduct() {
@@ -601,12 +628,21 @@ async function saveProduct() {
     error = result.error
   }
 
-  if (isMissingCategoryError(error)) {
-    const fallbackPayload = productPayload(false)
+  if (isMissingCategoryError(error) || isMissingImageUrlsError(error)) {
+    const fallbackPayload = productPayload(!isMissingCategoryError(error))
+    if (isMissingImageUrlsError(error)) delete fallbackPayload.image_urls
     const fallbackResult = editingProduct.value
       ? await supabase.from('products').update(fallbackPayload).eq('id', editingProduct.value.id)
       : await supabase.from('products').insert([fallbackPayload])
     error = fallbackResult.error
+
+    if (isMissingImageUrlsError(error)) {
+      delete fallbackPayload.image_urls
+      const secondFallbackResult = editingProduct.value
+        ? await supabase.from('products').update(fallbackPayload).eq('id', editingProduct.value.id)
+        : await supabase.from('products').insert([fallbackPayload])
+      error = secondFallbackResult.error
+    }
   }
 
   saving.value = false
@@ -740,34 +776,62 @@ function triggerUpload(type) {
 }
 
 async function uploadFile(event, type) {
-  const [file] = event.target.files || []
-  if (!file) return
+  const files = Array.from(event.target.files || [])
+  if (!files.length) return
 
   if (type === 'image') uploadingImage.value = true
   if (type === 'video') uploadingVideo.value = true
   if (type === 'gallery') uploadingGallery.value = true
   if (type === 'owner') uploadingOwnerPhoto.value = true
 
-  const extension = file.name.split('.').pop() || 'file'
-  const folder = type === 'video' ? 'videos' : type === 'gallery' ? 'gallery' : type === 'owner' ? 'site' : 'products'
-  const path = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2, 10)}.${extension}`
-  const { error: uploadError } = await supabase.storage.from('product-media').upload(path, file)
+  try {
+    const uploadedUrls = []
+    for (const file of files) {
+      const extension = file.name.split('.').pop() || 'file'
+      const folder = type === 'video' ? 'videos' : type === 'gallery' ? 'gallery' : type === 'owner' ? 'site' : 'products'
+      const path = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2, 10)}.${extension}`
+      const { error: uploadError } = await supabase.storage.from('product-media').upload(path, file)
 
-  if (type === 'image') uploadingImage.value = false
-  if (type === 'video') uploadingVideo.value = false
-  if (type === 'gallery') uploadingGallery.value = false
-  if (type === 'owner') uploadingOwnerPhoto.value = false
+      if (uploadError) {
+        showToast(uploadErrorMessage(uploadError, type), 'error')
+        return
+      }
 
-  if (uploadError) {
-    showToast(uploadError.message, 'error')
-    return
+      const { data } = supabase.storage.from('product-media').getPublicUrl(path)
+      uploadedUrls.push(data.publicUrl)
+    }
+
+    if (type === 'image') {
+      productForm.image_urls = [...normalizeProductPhotos(productForm), ...uploadedUrls]
+      productForm.image_url = productForm.image_urls[0] || ''
+    }
+    if (type === 'video') productForm.video_url = uploadedUrls[0] || ''
+    if (type === 'gallery') galleryForm.image_url = uploadedUrls[0] || ''
+    if (type === 'owner') siteForm.owner_photo_url = uploadedUrls[0] || ''
+  } finally {
+    event.target.value = ''
+    if (type === 'image') uploadingImage.value = false
+    if (type === 'video') uploadingVideo.value = false
+    if (type === 'gallery') uploadingGallery.value = false
+    if (type === 'owner') uploadingOwnerPhoto.value = false
   }
+}
 
-  const { data } = supabase.storage.from('product-media').getPublicUrl(path)
-  if (type === 'image') productForm.image_url = data.publicUrl
-  if (type === 'video') productForm.video_url = data.publicUrl
-  if (type === 'gallery') galleryForm.image_url = data.publicUrl
-  if (type === 'owner') siteForm.owner_photo_url = data.publicUrl
+function normalizeProductPhotos(product) {
+  return [...new Set([...(Array.isArray(product.image_urls) ? product.image_urls : []), product.image_url].filter(Boolean))]
+}
+
+function removeProductPhoto(index) {
+  productForm.image_urls.splice(index, 1)
+  productForm.image_url = productForm.image_urls[0] || ''
+}
+
+function uploadErrorMessage(error, type) {
+  const message = error?.message || 'Upload failed.'
+  if (type === 'video' && message.toLowerCase().includes('limit')) {
+    return 'Video exceeds the storage upload limit. Please trim or compress it, then upload again.'
+  }
+  return message
 }
 
 async function loadSiteSettings() {
@@ -783,11 +847,20 @@ async function saveSiteSettings() {
   saving.value = true
   formError.value = ''
 
-  const { error } = await supabase.from('site_settings').upsert({
+  const payload = {
     ...siteForm,
     id: 'about',
     updated_at: new Date().toISOString()
-  })
+  }
+
+  let { error } = await supabase.from('site_settings').upsert(payload)
+
+  if (error?.message?.includes('owner_instagram') || error?.message?.includes('owner_telegram')) {
+    delete payload.owner_instagram
+    delete payload.owner_telegram
+    const fallback = await supabase.from('site_settings').upsert(payload)
+    error = fallback.error
+  }
 
   saving.value = false
 
@@ -1467,6 +1540,40 @@ onMounted(async () => {
   width: 100%;
   max-height: 220px;
   object-fit: cover;
+}
+
+.photo-preview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.photo-preview {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #eadfd2;
+  border-radius: 14px;
+  aspect-ratio: 1 / 1;
+  background: #f2e5d7;
+}
+
+.photo-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.photo-preview span {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  border-radius: 999px;
+  padding: 4px 8px;
+  background: #a85f33;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 900;
 }
 
 .upload-remove {

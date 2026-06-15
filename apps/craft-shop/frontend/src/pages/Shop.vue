@@ -101,7 +101,7 @@
               class="featured-card"
             >
               <div class="featured-img-wrap">
-                <img v-if="product.image_url" :src="product.image_url" :alt="product.name" loading="eager" />
+                <img v-if="mainProductImage(product)" :src="mainProductImage(product)" :alt="product.name" loading="eager" />
                 <span v-else>Image</span>
               </div>
               <div>
@@ -179,7 +179,7 @@
       <div v-else class="product-grid">
         <RouterLink v-for="product in filteredProducts" :key="product.id" :to="`/product/${product.slug}`" class="product-card" v-reveal>
           <div class="product-card-img-wrap">
-            <img v-if="product.image_url" :src="product.image_url" :alt="product.name" class="product-card-img" loading="lazy" />
+            <img v-if="mainProductImage(product)" :src="mainProductImage(product)" :alt="product.name" class="product-card-img" loading="lazy" />
             <div v-else class="product-card-placeholder">Image</div>
             <div class="product-card-badges">
               <span v-if="!product.is_available" class="badge sold">Sold Out</span>
@@ -242,7 +242,7 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { supabase } from '../lib/supabase.js'
 
-const shopName = import.meta.env.VITE_SHOP_NAME || 'Handmade Craft Shop'
+const shopName = import.meta.env.VITE_SHOP_NAME || 'Laxmi Creations'
 const phone = import.meta.env.VITE_WHATSAPP_PHONE || ''
 const products = ref([])
 const activeCategory = ref('All')
@@ -277,6 +277,10 @@ const processSteps = [
 
 function categoryName(product) {
   return product.category || 'Gifts'
+}
+
+function mainProductImage(product) {
+  return product.image_url || (Array.isArray(product.image_urls) ? product.image_urls[0] : '')
 }
 
 const categoryOptions = computed(() => {
