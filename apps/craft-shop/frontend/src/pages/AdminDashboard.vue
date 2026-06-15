@@ -294,8 +294,8 @@
               <div class="upload-zone" :class="{ 'has-file': productForm.image_urls.length }" @click="triggerUpload('image')">
                 <input ref="imageInput" type="file" accept="image/*" multiple @change="uploadFile($event, 'image')" />
                 <div class="upload-placeholder">
-                  <strong>{{ uploadingImage ? 'Uploading...' : 'Click to upload photos' }}</strong>
-                  <span>Optional. Select one or more JPG/PNG photos. First photo is the main shop image.</span>
+                  <strong>{{ uploadingImage ? 'Uploading...' : productForm.image_urls.length ? 'Add more photos' : 'Click to upload photos' }}</strong>
+                  <span>{{ productForm.image_urls.length ? 'Existing photos stay unless you remove them.' : 'Optional. Select one or more JPG/PNG photos.' }} First photo is the main shop image.</span>
                 </div>
               </div>
               <div v-if="productForm.image_urls.length" class="photo-preview-grid">
@@ -363,8 +363,8 @@
               <div class="upload-zone" :class="{ 'has-file': galleryForm.image_urls.length }" @click="triggerUpload('gallery')">
                 <input ref="galleryInput" type="file" accept="image/*" multiple @change="uploadFile($event, 'gallery')" />
                 <div class="upload-placeholder">
-                  <strong>{{ uploadingGallery ? 'Uploading...' : 'Click to upload photos' }}</strong>
-                  <span>Select one or more photos for this same gallery item. First photo is the main image.</span>
+                  <strong>{{ uploadingGallery ? 'Uploading...' : galleryForm.image_urls.length ? 'Add more photos' : 'Click to upload photos' }}</strong>
+                  <span>{{ galleryForm.image_urls.length ? 'Existing gallery photos stay unless you remove them.' : 'Select one or more photos for this same gallery item.' }} First photo is the main image.</span>
                 </div>
               </div>
               <div v-if="galleryForm.image_urls.length" class="photo-preview-grid">
@@ -1571,6 +1571,13 @@ onMounted(async () => {
   gap: 4px;
   place-items: center;
   color: #77695f;
+  padding: 14px;
+  text-align: center;
+}
+
+.upload-placeholder span {
+  max-width: 340px;
+  line-height: 1.45;
 }
 
 .upload-preview {
@@ -1600,6 +1607,7 @@ onMounted(async () => {
   border-radius: 14px;
   aspect-ratio: 1 / 1;
   background: #f2e5d7;
+  box-shadow: 0 10px 24px rgba(65, 42, 24, 0.08);
 }
 
 .photo-preview img {
@@ -1631,6 +1639,7 @@ onMounted(async () => {
   color: #ffffff;
   cursor: pointer;
   font-weight: 900;
+  min-height: 32px;
 }
 
 .form-error {
@@ -1874,6 +1883,27 @@ onMounted(async () => {
 
   .photo-preview-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .photo-preview {
+    border-radius: 12px;
+  }
+
+  .photo-preview span {
+    top: 7px;
+    left: 7px;
+    padding: 4px 7px;
+    font-size: 10px;
+  }
+
+  .photo-preview .upload-remove {
+    right: 7px;
+    bottom: 7px;
+    top: auto;
+    min-height: 34px;
+    padding: 7px 10px;
+    font-size: 12px;
   }
 }
 </style>
