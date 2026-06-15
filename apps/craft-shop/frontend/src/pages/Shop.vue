@@ -171,9 +171,12 @@
 
       <div v-else-if="filteredProducts.length === 0" class="shop-empty-state">
         <div class="empty-state-icon">Art</div>
-        <h3>No products yet</h3>
-        <p>Products will appear here once they are added from the admin dashboard.</p>
-        <RouterLink to="/admin/login" class="shop-btn outline">Add Products</RouterLink>
+        <h3>{{ hasActiveFilters ? 'No matching products' : 'No products yet' }}</h3>
+        <p>
+          {{ hasActiveFilters ? 'Try a different search term or clear the selected category.' : 'Products will appear here once they are added from the admin dashboard.' }}
+        </p>
+        <button v-if="hasActiveFilters" class="shop-btn outline" type="button" @click="resetFilters">Clear Filters</button>
+        <RouterLink v-else to="/admin/login" class="shop-btn outline">Add Products</RouterLink>
       </div>
 
       <div v-else class="product-grid">
@@ -227,10 +230,10 @@
           <RouterLink to="/gallery">Gallery</RouterLink>
           <a :href="whatsAppLink('Hi!')" target="_blank" rel="noopener">WhatsApp</a>
           <a :href="`mailto:${ownerEmail}`" class="footer-contact-link">
-            <span>@</span>{{ ownerEmail }}
+            <span class="footer-icon email" aria-hidden="true"></span>{{ ownerEmail }}
           </a>
           <a :href="instagramLink" target="_blank" rel="noopener" class="footer-contact-link">
-            <span>IG</span>{{ instagramHandle }}
+            <span class="footer-icon instagram" aria-hidden="true"></span>{{ instagramHandle }}
           </a>
         </div>
       </div>
@@ -320,6 +323,8 @@ const filteredProducts = computed(() => {
   })
 })
 
+const hasActiveFilters = computed(() => Boolean(searchQuery.value) || activeCategory.value !== 'All')
+
 const featuredProducts = computed(() => {
   return products.value.filter((product) => product.is_featured && product.is_available)
 })
@@ -346,6 +351,11 @@ function nextFeaturedSlide() {
 
 function previousFeaturedSlide() {
   activeFeaturedIndex.value = (activeFeaturedIndex.value - 1 + featuredPageCount.value) % featuredPageCount.value
+}
+
+function resetFilters() {
+  searchQuery.value = ''
+  activeCategory.value = 'All'
 }
 
 function whatsAppLink(message) {
@@ -465,6 +475,13 @@ async function loadSiteSettings() {
 .shop-btn:hover {
   transform: translateY(-1px);
   box-shadow: 0 12px 28px rgba(65, 42, 24, 0.14);
+}
+
+.shop-btn:focus-visible,
+.cat-chip:focus-visible,
+.featured-arrow:focus-visible {
+  outline: 3px solid rgba(168, 95, 51, 0.24);
+  outline-offset: 3px;
 }
 
 .shop-btn.small {
@@ -783,6 +800,13 @@ async function loadSiteSettings() {
   cursor: pointer;
   font-size: 0;
   box-shadow: 0 12px 26px rgba(65, 42, 24, 0.1);
+  transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease;
+}
+
+.featured-arrow:hover {
+  background: #ffffff;
+  box-shadow: 0 16px 34px rgba(65, 42, 24, 0.16);
+  transform: translateY(-1px);
 }
 
 .featured-arrow::before {
@@ -948,6 +972,13 @@ async function loadSiteSettings() {
   color: #261f1a;
   cursor: pointer;
   font-weight: 850;
+  transition: border-color 160ms ease, background 160ms ease, color 160ms ease, transform 160ms ease;
+}
+
+.cat-chip:hover {
+  border-color: #cfa98f;
+  background: #fff8ef;
+  transform: translateY(-1px);
 }
 
 .cat-chip small {
@@ -1084,10 +1115,11 @@ async function loadSiteSettings() {
   border-radius: 18px;
   background: #ffffff;
   box-shadow: 0 16px 42px rgba(65, 42, 24, 0.08);
-  transition: transform 180ms ease, box-shadow 180ms ease;
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
 }
 
 .product-card:hover {
+  border-color: rgba(168, 95, 51, 0.28);
   transform: translateY(-3px);
   box-shadow: 0 22px 56px rgba(65, 42, 24, 0.12);
 }
@@ -1198,6 +1230,11 @@ async function loadSiteSettings() {
   color: #77695f;
   font-size: 13px;
   font-weight: 900;
+  transition: color 160ms ease;
+}
+
+.product-card:hover .product-card-cta {
+  color: #a85f33;
 }
 
 .cta-strip {
@@ -1257,13 +1294,29 @@ async function loadSiteSettings() {
 
 .footer-links {
   display: flex;
+  align-items: center;
   gap: 18px;
   flex-wrap: wrap;
 }
 
 .footer-links a {
+  border-radius: 999px;
   color: #b5aaa1;
   font-weight: 800;
+  transition: color 160ms ease, background 160ms ease;
+}
+
+.footer-links a:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+
+.footer-links .footer-contact-link:hover {
+  background: transparent;
+}
+
+.footer-links .footer-contact-link:hover .footer-icon {
+  opacity: 1;
 }
 
 .footer-contact-link {
@@ -1272,16 +1325,29 @@ async function loadSiteSettings() {
   gap: 7px;
 }
 
-.footer-contact-link span {
-  display: grid;
-  place-items: center;
-  min-width: 25px;
+.footer-icon {
+  display: inline-block;
+  width: 25px;
   height: 25px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
-  color: #ffffff;
-  font-size: 11px;
-  font-weight: 900;
+  background-color: #ffffff;
+  opacity: 0.92;
+  -webkit-mask-position: center;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-size: 19px 19px;
+  mask-position: center;
+  mask-repeat: no-repeat;
+  mask-size: 19px 19px;
+}
+
+.footer-icon.email {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M4 5h16c1.1 0 2 .9 2 2v10c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V7c0-1.1.9-2 2-2Zm0 3.2V17h16V8.2l-8 5.2-8-5.2Zm1.2-1.2 6.8 4.4L18.8 7H5.2Z'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M4 5h16c1.1 0 2 .9 2 2v10c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V7c0-1.1.9-2 2-2Zm0 3.2V17h16V8.2l-8 5.2-8-5.2Zm1.2-1.2 6.8 4.4L18.8 7H5.2Z'/%3E%3C/svg%3E");
+}
+
+.footer-icon.instagram {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M7.8 2h8.4A5.8 5.8 0 0 1 22 7.8v8.4a5.8 5.8 0 0 1-5.8 5.8H7.8A5.8 5.8 0 0 1 2 16.2V7.8A5.8 5.8 0 0 1 7.8 2Zm0 2A3.8 3.8 0 0 0 4 7.8v8.4A3.8 3.8 0 0 0 7.8 20h8.4a3.8 3.8 0 0 0 3.8-3.8V7.8A3.8 3.8 0 0 0 16.2 4H7.8Zm8.8 2.3a1.1 1.1 0 1 1 0 2.2 1.1 1.1 0 0 1 0-2.2ZM12 7.2a4.8 4.8 0 1 1 0 9.6 4.8 4.8 0 0 1 0-9.6Zm0 2a2.8 2.8 0 1 0 0 5.6 2.8 2.8 0 0 0 0-5.6Z'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M7.8 2h8.4A5.8 5.8 0 0 1 22 7.8v8.4a5.8 5.8 0 0 1-5.8 5.8H7.8A5.8 5.8 0 0 1 2 16.2V7.8A5.8 5.8 0 0 1 7.8 2Zm0 2A3.8 3.8 0 0 0 4 7.8v8.4A3.8 3.8 0 0 0 7.8 20h8.4a3.8 3.8 0 0 0 3.8-3.8V7.8A3.8 3.8 0 0 0 16.2 4H7.8Zm8.8 2.3a1.1 1.1 0 1 1 0 2.2 1.1 1.1 0 0 1 0-2.2ZM12 7.2a4.8 4.8 0 1 1 0 9.6 4.8 4.8 0 0 1 0-9.6Zm0 2a2.8 2.8 0 1 0 0 5.6 2.8 2.8 0 0 0 0-5.6Z'/%3E%3C/svg%3E");
 }
 
 .footer-copy {
@@ -1462,9 +1528,18 @@ async function loadSiteSettings() {
 
   .floating-wa {
     right: 12px;
-    bottom: 12px;
+    bottom: calc(92px + env(safe-area-inset-bottom));
     min-width: 132px;
-    padding: 10px 14px;
+    padding: 9px 13px;
+    box-shadow: 0 12px 30px rgba(24, 111, 64, 0.24);
+  }
+
+  .floating-wa span {
+    font-size: 10px;
+  }
+
+  .floating-wa strong {
+    font-size: 13px;
   }
 }
 

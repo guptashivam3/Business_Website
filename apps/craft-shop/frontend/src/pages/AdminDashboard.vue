@@ -826,6 +826,7 @@ async function uploadFile(event, type) {
       const { error: uploadError } = await supabase.storage.from('product-media').upload(path, file)
 
       if (uploadError) {
+        applyUploadedUrls(type, uploadedUrls)
         showToast(uploadErrorMessage(uploadError, type), 'error')
         return
       }
@@ -834,16 +835,7 @@ async function uploadFile(event, type) {
       uploadedUrls.push(data.publicUrl)
     }
 
-    if (type === 'image') {
-      productForm.image_urls = [...normalizeProductPhotos(productForm), ...uploadedUrls]
-      productForm.image_url = productForm.image_urls[0] || ''
-    }
-    if (type === 'video') productForm.video_url = uploadedUrls[0] || ''
-    if (type === 'gallery') {
-      galleryForm.image_urls = [...normalizeGalleryPhotos(galleryForm), ...uploadedUrls]
-      galleryForm.image_url = galleryForm.image_urls[0] || ''
-    }
-    if (type === 'owner') siteForm.owner_photo_url = uploadedUrls[0] || ''
+    applyUploadedUrls(type, uploadedUrls)
   } finally {
     event.target.value = ''
     if (type === 'image') uploadingImage.value = false
@@ -851,6 +843,21 @@ async function uploadFile(event, type) {
     if (type === 'gallery') uploadingGallery.value = false
     if (type === 'owner') uploadingOwnerPhoto.value = false
   }
+}
+
+function applyUploadedUrls(type, uploadedUrls) {
+  if (!uploadedUrls.length) return
+
+  if (type === 'image') {
+    productForm.image_urls = [...normalizeProductPhotos(productForm), ...uploadedUrls]
+    productForm.image_url = productForm.image_urls[0] || ''
+  }
+  if (type === 'video') productForm.video_url = uploadedUrls[0] || ''
+  if (type === 'gallery') {
+    galleryForm.image_urls = [...normalizeGalleryPhotos(galleryForm), ...uploadedUrls]
+    galleryForm.image_url = galleryForm.image_urls[0] || ''
+  }
+  if (type === 'owner') siteForm.owner_photo_url = uploadedUrls[0] || ''
 }
 
 function normalizeProductPhotos(product) {
@@ -1078,6 +1085,20 @@ onMounted(async () => {
   padding: 10px 16px;
   cursor: pointer;
   font-weight: 850;
+  transition: background 160ms ease, border-color 160ms ease, box-shadow 160ms ease, color 160ms ease, transform 160ms ease;
+}
+
+.admin-btn:hover {
+  box-shadow: 0 10px 24px rgba(65, 42, 24, 0.1);
+  transform: translateY(-1px);
+}
+
+.admin-btn:focus-visible,
+.admin-tab:focus-visible,
+.modal-close:focus-visible,
+.upload-zone:focus-within {
+  outline: 3px solid rgba(168, 95, 51, 0.24);
+  outline-offset: 3px;
 }
 
 .admin-btn.small {
@@ -1476,10 +1497,14 @@ onMounted(async () => {
 }
 
 .modal-header {
+  position: sticky;
+  top: 0;
+  z-index: 2;
   display: flex;
   justify-content: space-between;
   align-items: center;
   border-bottom: 1px solid #eadfd2;
+  background: #ffffff;
 }
 
 .modal-title {
@@ -1504,8 +1529,12 @@ onMounted(async () => {
 }
 
 .modal-footer {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
   justify-content: flex-end;
   border-top: 1px solid #eadfd2;
+  background: #ffffff;
 }
 
 .form-grid {
@@ -1539,6 +1568,15 @@ onMounted(async () => {
   color: #261f1a;
   background: #fffdf8;
   outline: none;
+  transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
+}
+
+.field input:focus,
+.field textarea:focus,
+.field select:focus {
+  border-color: #a85f33;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(168, 95, 51, 0.12);
 }
 
 .field textarea {
@@ -1561,6 +1599,13 @@ onMounted(async () => {
   border-radius: 16px;
   background: #fffaf4;
   cursor: pointer;
+  transition: border-color 160ms ease, background 160ms ease, box-shadow 160ms ease;
+}
+
+.upload-zone:hover {
+  border-color: #a85f33;
+  background: #fff8ef;
+  box-shadow: 0 12px 30px rgba(65, 42, 24, 0.06);
 }
 
 .upload-zone input[type="file"] {
@@ -1799,8 +1844,12 @@ onMounted(async () => {
 
   .products-row-actions {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
+  }
+
+  .products-row-actions .admin-btn:first-child {
+    grid-column: 1 / -1;
   }
 
   .products-row-actions .admin-btn {
@@ -1875,7 +1924,8 @@ onMounted(async () => {
 
   .modal-footer {
     display: grid;
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
   }
 
   .modal-footer .admin-btn {

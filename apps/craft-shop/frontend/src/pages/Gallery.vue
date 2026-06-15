@@ -35,7 +35,17 @@
       </div>
 
       <div v-else class="gallery-grid">
-        <article v-for="item in items" :key="item.id" class="gallery-item" v-reveal @click="openLightbox(item)">
+        <article
+          v-for="item in items"
+          :key="item.id"
+          class="gallery-item"
+          v-reveal
+          role="button"
+          tabindex="0"
+          @click="openLightbox(item)"
+          @keydown.enter.prevent="openLightbox(item)"
+          @keydown.space.prevent="openLightbox(item)"
+        >
           <div class="gallery-img-wrap">
             <img :src="mainGalleryImage(item)" :alt="item.title" class="gallery-img" loading="lazy" />
             <span v-if="galleryImages(item).length > 1" class="gallery-count">{{ galleryImages(item).length }} photos</span>
@@ -53,10 +63,31 @@
     </main>
 
     <div v-if="lightboxItem" class="lightbox" @click.self="closeLightbox">
-      <button class="lightbox-close" type="button" @click="closeLightbox">Close</button>
       <div class="lightbox-inner">
+        <div class="lightbox-topbar">
+          <span>{{ activeLightboxIndex + 1 }} / {{ lightboxImages.length }}</span>
+          <button class="lightbox-close" type="button" aria-label="Close gallery preview" @click="closeLightbox">Close</button>
+        </div>
         <div class="lightbox-media">
+          <button
+            v-if="lightboxImages.length > 1"
+            class="lightbox-arrow left"
+            type="button"
+            aria-label="Previous photo"
+            @click="showPreviousImage"
+          >
+            Prev
+          </button>
           <img :src="activeLightboxImage" :alt="lightboxItem.title" class="lightbox-img" />
+          <button
+            v-if="lightboxImages.length > 1"
+            class="lightbox-arrow right"
+            type="button"
+            aria-label="Next photo"
+            @click="showNextImage"
+          >
+            Next
+          </button>
           <div v-if="lightboxImages.length > 1" class="lightbox-thumbs" aria-label="Gallery photos">
             <button
               v-for="(url, index) in lightboxImages"
@@ -65,7 +96,7 @@
               class="lightbox-thumb"
               :class="{ active: activeLightboxImage === url }"
               :aria-label="`Show gallery photo ${index + 1}`"
-              @click="activeLightboxImage = url"
+              @click="setActiveImage(url)"
             >
               <img :src="url" :alt="`${lightboxItem.title} photo ${index + 1}`" />
             </button>
@@ -108,6 +139,7 @@ const lightboxItem = ref(null)
 const activeLightboxImage = ref('')
 
 const lightboxImages = computed(() => (lightboxItem.value ? galleryImages(lightboxItem.value) : []))
+const activeLightboxIndex = computed(() => Math.max(0, lightboxImages.value.indexOf(activeLightboxImage.value)))
 
 const customIdeaLink = computed(() => {
   const message = 'Hi! I saw your gallery and have a custom order idea.'
@@ -142,6 +174,22 @@ function galleryImages(item) {
 
 function mainGalleryImage(item) {
   return galleryImages(item)[0] || ''
+}
+
+function setActiveImage(url) {
+  activeLightboxImage.value = url
+}
+
+function showNextImage() {
+  if (!lightboxImages.value.length) return
+  const nextIndex = (activeLightboxIndex.value + 1) % lightboxImages.value.length
+  activeLightboxImage.value = lightboxImages.value[nextIndex]
+}
+
+function showPreviousImage() {
+  if (!lightboxImages.value.length) return
+  const nextIndex = (activeLightboxIndex.value - 1 + lightboxImages.value.length) % lightboxImages.value.length
+  activeLightboxImage.value = lightboxImages.value[nextIndex]
 }
 
 onUnmounted(() => {
@@ -229,6 +277,15 @@ async function loadGallery() {
 .gallery-btn:hover {
   transform: translateY(-1px);
   box-shadow: 0 12px 28px rgba(65, 42, 24, 0.14);
+}
+
+.gallery-btn:focus-visible,
+.gallery-item:focus-visible,
+.lightbox-close:focus-visible,
+.lightbox-arrow:focus-visible,
+.lightbox-thumb:focus-visible {
+  outline: 3px solid rgba(168, 95, 51, 0.24);
+  outline-offset: 3px;
 }
 
 .gallery-btn.small {
@@ -342,6 +399,11 @@ async function loadGallery() {
   animation: riseIn 520ms ease both;
 }
 
+.gallery-item:focus-visible {
+  border-color: rgba(184, 92, 56, 0.5);
+  box-shadow: 0 0 0 4px rgba(168, 95, 51, 0.12), 0 18px 42px rgba(65, 42, 24, 0.13);
+}
+
 @keyframes riseIn {
   from {
     opacity: 0;
@@ -397,7 +459,7 @@ async function loadGallery() {
   inset: 0;
   display: grid;
   place-items: center;
-  background: rgba(26, 23, 20, 0);
+  background: linear-gradient(180deg, rgba(26, 23, 20, 0), rgba(26, 23, 20, 0.12));
   transition: background 180ms ease;
 }
 
@@ -457,30 +519,18 @@ async function loadGallery() {
   z-index: 999;
   display: grid;
   place-items: center;
-  padding: 22px;
+  padding: 18px;
   background: rgba(18, 15, 12, 0.78);
   backdrop-filter: blur(16px);
 }
 
-.lightbox-close {
-  position: absolute;
-  top: 18px;
-  right: 18px;
-  border: 1px solid rgba(255, 255, 255, 0.24);
-  border-radius: 999px;
-  padding: 9px 14px;
-  background: rgba(255, 255, 255, 0.12);
-  color: #ffffff;
-  cursor: pointer;
-  font-weight: 900;
-}
-
 .lightbox-inner {
   display: grid;
-  grid-template-columns: minmax(0, 560px) minmax(240px, 1fr);
+  grid-template-columns: minmax(0, 560px) minmax(260px, 1fr);
+  grid-template-rows: auto minmax(0, 1fr);
   gap: 0;
-  align-items: center;
   width: min(100%, 920px);
+  max-height: calc(100vh - 36px);
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.18);
   border-radius: 24px;
@@ -488,23 +538,105 @@ async function loadGallery() {
   box-shadow: 0 28px 80px rgba(0, 0, 0, 0.34);
 }
 
+.lightbox-topbar {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  min-height: 58px;
+  padding: 10px 14px 10px 18px;
+  border-bottom: 1px solid #eadfd2;
+  background: #fffdf8;
+}
+
+.lightbox-topbar span {
+  color: #79401f;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.lightbox-close {
+  min-height: 40px;
+  border: 1px solid #d8c8b8;
+  border-radius: 999px;
+  padding: 8px 14px;
+  background: #ffffff;
+  color: #261f1a;
+  cursor: pointer;
+  font-weight: 900;
+}
+
 .lightbox-media {
+  position: relative;
+  display: grid;
+  align-content: start;
+  min-height: 0;
   background: #f2e5d7;
 }
 
 .lightbox-img {
   display: block;
   width: 100%;
-  height: min(76vh, 680px);
-  object-fit: cover;
+  height: min(68vh, 640px);
+  object-fit: contain;
   background: #f2e5d7;
+}
+
+.lightbox-arrow {
+  position: absolute;
+  top: calc(50% - 38px);
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.62);
+  border-radius: 999px;
+  background: rgba(38, 31, 26, 0.58);
+  color: transparent;
+  cursor: pointer;
+  font-size: 0;
+  backdrop-filter: blur(10px);
+  transition: background 160ms ease, transform 160ms ease;
+}
+
+.lightbox-arrow:hover {
+  background: rgba(38, 31, 26, 0.72);
+  transform: translateY(-1px);
+}
+
+.lightbox-arrow::before {
+  content: "";
+  width: 12px;
+  height: 12px;
+  border-top: 2px solid #ffffff;
+  border-left: 2px solid #ffffff;
+}
+
+.lightbox-arrow.left {
+  left: 12px;
+}
+
+.lightbox-arrow.left::before {
+  transform: rotate(-45deg) translate(1px, 1px);
+}
+
+.lightbox-arrow.right {
+  right: 12px;
+}
+
+.lightbox-arrow.right::before {
+  transform: rotate(135deg) translate(1px, 1px);
 }
 
 .lightbox-thumbs {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(58px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
   gap: 8px;
   padding: 10px;
+  overflow-x: auto;
   background: rgba(255, 253, 248, 0.96);
 }
 
@@ -529,6 +661,8 @@ async function loadGallery() {
 }
 
 .lightbox-info {
+  min-height: 0;
+  overflow: auto;
   padding: 26px;
   color: #241f1a;
 }
@@ -588,12 +722,11 @@ async function loadGallery() {
 
   .lightbox-inner {
     grid-template-columns: 1fr;
-    max-height: calc(100vh - 44px);
-    overflow: auto;
+    max-height: calc(100dvh - 36px);
   }
 
   .lightbox-img {
-    height: min(58vh, 520px);
+    height: min(56vh, 520px);
   }
 }
 
@@ -606,6 +739,14 @@ async function loadGallery() {
   .gallery-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 10px;
+  }
+
+  .gallery-nav-links {
+    width: 100%;
+  }
+
+  .gallery-nav-links .gallery-btn {
+    flex: 1;
   }
 
   .gallery-hero {
@@ -633,25 +774,54 @@ async function loadGallery() {
   }
 
   .lightbox {
-    padding: 12px;
-  }
-
-  .lightbox-close {
-    top: 12px;
-    right: 12px;
-    z-index: 2;
+    align-items: end;
+    padding: 10px;
   }
 
   .lightbox-inner {
     border-radius: 18px;
+    max-height: calc(100dvh - 20px);
+  }
+
+  .lightbox-topbar {
+    min-height: 52px;
+    padding: 8px 10px 8px 14px;
   }
 
   .lightbox-img {
-    height: 54vh;
+    height: min(52vh, 460px);
+  }
+
+  .lightbox-arrow {
+    top: calc(50% - 44px);
+    width: 38px;
+    height: 38px;
+  }
+
+  .lightbox-arrow.left {
+    left: 8px;
+  }
+
+  .lightbox-arrow.right {
+    right: 8px;
+  }
+
+  .lightbox-thumbs {
+    display: flex;
+    gap: 8px;
+    padding: 9px;
+  }
+
+  .lightbox-thumb {
+    flex: 0 0 58px;
   }
 
   .lightbox-info {
-    padding: 18px;
+    padding: 18px 18px 22px;
+  }
+
+  .lightbox-info .gallery-btn {
+    width: 100%;
   }
 
   .lightbox-title {

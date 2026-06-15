@@ -128,8 +128,13 @@
     </main>
 
     <div v-if="imageOpen && activeImage" class="image-viewer" @click.self="imageOpen = false">
-      <button class="image-viewer-close" type="button" @click="imageOpen = false">Close</button>
-      <img :src="activeImage" :alt="product.name" />
+      <div class="image-viewer-inner">
+        <div class="image-viewer-topbar">
+          <span>{{ product.name }}</span>
+          <button class="image-viewer-close" type="button" @click="imageOpen = false">Close</button>
+        </div>
+        <img :src="activeImage" :alt="product.name" />
+      </div>
     </div>
   </div>
 </template>
@@ -700,9 +705,33 @@ async function loadProduct() {
   backdrop-filter: blur(16px);
 }
 
+.image-viewer-inner {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 12px;
+  width: min(100%, 980px);
+  max-height: calc(100dvh - 52px);
+}
+
+.image-viewer-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  color: #ffffff;
+}
+
+.image-viewer-topbar span {
+  min-width: 0;
+  overflow: hidden;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .image-viewer img {
-  max-width: min(100%, 980px);
-  max-height: 86vh;
+  width: 100%;
+  max-height: calc(100dvh - 118px);
   border-radius: 22px;
   object-fit: contain;
   box-shadow: 0 28px 80px rgba(0, 0, 0, 0.38);
@@ -710,9 +739,7 @@ async function loadProduct() {
 }
 
 .image-viewer-close {
-  position: absolute;
-  top: 18px;
-  right: 18px;
+  flex: 0 0 auto;
   border: 1px solid rgba(255, 255, 255, 0.22);
   border-radius: 999px;
   padding: 10px 14px;
@@ -765,6 +792,20 @@ async function loadProduct() {
   .upi-id-wrap {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .image-viewer {
+    align-items: end;
+    padding: 12px;
+  }
+
+  .image-viewer-inner {
+    max-height: calc(100dvh - 24px);
+  }
+
+  .image-viewer img {
+    max-height: calc(100dvh - 90px);
+    border-radius: 18px;
   }
 }
 

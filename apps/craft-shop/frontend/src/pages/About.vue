@@ -88,11 +88,13 @@
               <strong>{{ displayPhone }}</strong>
             </a>
             <a :href="`mailto:${ownerEmail}`" class="contact-card">
-              <span class="contact-icon email">Email</span>
+              <span class="contact-icon email" aria-hidden="true"></span>
+              <span>Email</span>
               <strong>{{ siteSettings.owner_email }}</strong>
             </a>
             <a :href="instagramLink" target="_blank" rel="noopener" class="contact-card">
-              <span class="contact-icon instagram">Instagram</span>
+              <span class="contact-icon instagram" aria-hidden="true"></span>
+              <span>Instagram</span>
               <strong>{{ instagramHandle }}</strong>
             </a>
             <a :href="whatsAppLink('Hi Laxmi ji, I saw your website and want to place a custom order.')" target="_blank" rel="noopener" class="contact-card highlight">
@@ -418,10 +420,21 @@ async function loadSiteSettings() {
   padding: 18px;
   background: rgba(255, 255, 255, 0.06);
   color: #ffffff;
+  transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
+}
+
+.contact-card:hover {
+  border-color: rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-1px);
 }
 
 .contact-card.highlight {
   background: #1f9d57;
+}
+
+.contact-card.highlight:hover {
+  background: #178f52;
 }
 
 .contact-card strong {
@@ -430,31 +443,27 @@ async function loadSiteSettings() {
 }
 
 .contact-icon {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.contact-icon::before {
-  display: grid;
-  place-items: center;
+  display: inline-block;
   width: 28px;
   height: 28px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.12);
-  color: #ffffff;
-  font-size: 12px;
-  font-weight: 900;
-  letter-spacing: 0;
-  text-transform: none;
+  margin-bottom: 4px;
+  background-color: #ffffff;
+  -webkit-mask-position: center;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-size: 22px 22px;
+  mask-position: center;
+  mask-repeat: no-repeat;
+  mask-size: 22px 22px;
 }
 
-.contact-icon.email::before {
-  content: "@";
+.contact-icon.email {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M4 5h16c1.1 0 2 .9 2 2v10c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V7c0-1.1.9-2 2-2Zm0 3.2V17h16V8.2l-8 5.2-8-5.2Zm1.2-1.2 6.8 4.4L18.8 7H5.2Z'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M4 5h16c1.1 0 2 .9 2 2v10c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V7c0-1.1.9-2 2-2Zm0 3.2V17h16V8.2l-8 5.2-8-5.2Zm1.2-1.2 6.8 4.4L18.8 7H5.2Z'/%3E%3C/svg%3E");
 }
 
-.contact-icon.instagram::before {
-  content: "IG";
+.contact-icon.instagram {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M7.8 2h8.4A5.8 5.8 0 0 1 22 7.8v8.4a5.8 5.8 0 0 1-5.8 5.8H7.8A5.8 5.8 0 0 1 2 16.2V7.8A5.8 5.8 0 0 1 7.8 2Zm0 2A3.8 3.8 0 0 0 4 7.8v8.4A3.8 3.8 0 0 0 7.8 20h8.4a3.8 3.8 0 0 0 3.8-3.8V7.8A3.8 3.8 0 0 0 16.2 4H7.8Zm8.8 2.3a1.1 1.1 0 1 1 0 2.2 1.1 1.1 0 0 1 0-2.2ZM12 7.2a4.8 4.8 0 1 1 0 9.6 4.8 4.8 0 0 1 0-9.6Zm0 2a2.8 2.8 0 1 0 0 5.6 2.8 2.8 0 0 0 0-5.6Z'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M7.8 2h8.4A5.8 5.8 0 0 1 22 7.8v8.4a5.8 5.8 0 0 1-5.8 5.8H7.8A5.8 5.8 0 0 1 2 16.2V7.8A5.8 5.8 0 0 1 7.8 2Zm0 2A3.8 3.8 0 0 0 4 7.8v8.4A3.8 3.8 0 0 0 7.8 20h8.4a3.8 3.8 0 0 0 3.8-3.8V7.8A3.8 3.8 0 0 0 16.2 4H7.8Zm8.8 2.3a1.1 1.1 0 1 1 0 2.2 1.1 1.1 0 0 1 0-2.2ZM12 7.2a4.8 4.8 0 1 1 0 9.6 4.8 4.8 0 0 1 0-9.6Zm0 2a2.8 2.8 0 1 0 0 5.6 2.8 2.8 0 0 0 0-5.6Z'/%3E%3C/svg%3E");
 }
 
 @media (max-width: 780px) {
@@ -493,6 +502,10 @@ async function loadSiteSettings() {
   .about-actions {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .about-actions .about-btn {
+    width: 100%;
   }
 
   .owner-card {
@@ -545,6 +558,14 @@ async function loadSiteSettings() {
 
   .story-grid .story-card:last-child {
     grid-column: 1 / -1;
+  }
+
+  .contact-section {
+    padding-bottom: calc(92px + env(safe-area-inset-bottom));
+  }
+
+  .contact-card {
+    padding: 16px;
   }
 }
 
