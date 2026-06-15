@@ -133,11 +133,11 @@
         <div class="tab-header">
           <div>
             <h2 class="tab-title">Manage Gallery</h2>
-            <p class="tab-sub">Show completed work as inspiration for custom orders.</p>
+            <p class="tab-sub">Upload finished work photos in batches for custom order inspiration.</p>
           </div>
           <div class="tab-actions">
             <RouterLink to="/gallery" class="admin-btn outline small" target="_blank">Preview Gallery</RouterLink>
-            <button class="admin-btn primary small" type="button" @click="openGalleryForm(null)">Add Item</button>
+            <button class="admin-btn primary small" type="button" @click="openGalleryForm(null)">Add Photos</button>
           </div>
         </div>
 
@@ -295,7 +295,7 @@
                 <input ref="imageInput" type="file" accept="image/*" multiple @change="uploadFile($event, 'image')" />
                 <div class="upload-placeholder">
                   <strong>{{ uploadingImage ? 'Uploading...' : 'Click to upload photos' }}</strong>
-                  <span>Select one or more JPG/PNG photos. First photo is the main shop image.</span>
+                  <span>Optional. Select one or more JPG/PNG photos. First photo is the main shop image.</span>
                 </div>
               </div>
               <div v-if="productForm.image_urls.length" class="photo-preview-grid">
@@ -316,7 +316,7 @@
                 </div>
                 <div v-else class="upload-placeholder">
                   <strong>{{ uploadingVideo ? 'Uploading...' : 'Click to upload video' }}</strong>
-                  <span>Short compressed video, optional. If it exceeds limits, trim or compress it first.</span>
+                  <span>Optional. Keep video under {{ videoUploadLimitLabel }} on the Free plan.</span>
                 </div>
               </div>
             </div>
@@ -359,16 +359,19 @@
               <textarea v-model="galleryForm.description" rows="2" placeholder="Brief description of the piece"></textarea>
             </div>
             <div class="field full">
-              <label>Photo *</label>
-              <div class="upload-zone" :class="{ 'has-file': galleryForm.image_url }" @click="triggerUpload('gallery')">
-                <input ref="galleryInput" type="file" accept="image/*" @change="uploadFile($event, 'gallery')" />
-                <div v-if="galleryForm.image_url" class="upload-preview">
-                  <img :src="galleryForm.image_url" alt="Gallery preview" />
-                  <button type="button" class="upload-remove" @click.stop="galleryForm.image_url = ''">Remove</button>
+              <label>{{ editingGallery ? 'Photo *' : 'Photos *' }}</label>
+              <div class="upload-zone" :class="{ 'has-file': galleryForm.image_urls.length }" @click="triggerUpload('gallery')">
+                <input ref="galleryInput" type="file" accept="image/*" :multiple="!editingGallery" @change="uploadFile($event, 'gallery')" />
+                <div class="upload-placeholder">
+                  <strong>{{ uploadingGallery ? 'Uploading...' : editingGallery ? 'Click to replace photo' : 'Click to upload photos' }}</strong>
+                  <span>{{ editingGallery ? 'Replaces this gallery item photo.' : 'Select one or more finished work photos.' }}</span>
                 </div>
-                <div v-else class="upload-placeholder">
-                  <strong>{{ uploadingGallery ? 'Uploading...' : 'Click to upload photo' }}</strong>
-                  <span>Finished work photo</span>
+              </div>
+              <div v-if="galleryForm.image_urls.length" class="photo-preview-grid">
+                <div v-for="(url, index) in galleryForm.image_urls" :key="url" class="photo-preview">
+                  <img :src="url" :alt="`Gallery photo ${index + 1}`" />
+                  <span v-if="index === 0 && editingGallery">Current</span>
+                  <button type="button" class="upload-remove" @click.stop="removeGalleryPhoto(index)">Remove</button>
                 </div>
               </div>
             </div>
@@ -452,6 +455,8 @@ const saving = ref(false)
 const formError = ref('')
 const deleteTarget = ref(null)
 const toast = ref(null)
+const maxVideoUploadBytes = 50 * 1024 * 1024
+const videoUploadLimitLabel = formatFileSize(maxVideoUploadBytes)
 
 const availableProducts = computed(() => products.value.filter((product) => product.is_available).length)
 const soldOutProducts = computed(() => products.value.filter((product) => !product.is_available).length)
@@ -512,6 +517,7 @@ function defaultGalleryForm() {
     category: '',
     description: '',
     image_url: '',
+    image_urls: [],
     is_visible: true
   }
 }
@@ -690,7 +696,10 @@ async function deleteProduct() {
 
 function openGalleryForm(item) {
   editingGallery.value = item
-  resetReactive(galleryForm, item ? { ...defaultGalleryForm(), ...item } : defaultGalleryForm())
+  const nextItem = item ? { ...defaultGalleryForm(), ...item } : defaultGalleryForm()
+  nextItem.image_urls = normalizeGalleryPhotos(nextItem)
+  nextItem.image_url = nextItem.image_urls[0] || ''
+  resetReactive(galleryForm, nextItem)
   formError.value = ''
   showGalleryForm.value = true
 }
@@ -702,25 +711,28 @@ function closeGalleryForm() {
 }
 
 async function saveGalleryItem() {
-  if (!galleryForm.title || !galleryForm.image_url) {
-    formError.value = 'Title and photo are required.'
+  const imageUrls = normalizeGalleryPhotos(galleryForm)
+
+  if (!galleryForm.title || imageUrls.length === 0) {
+    formError.value = 'Title and at least one photo are required.'
     return
   }
 
   saving.value = true
   formError.value = ''
 
-  const payload = {
+  const basePayload = {
     title: galleryForm.title,
     category: galleryForm.category,
     description: galleryForm.description,
-    image_url: galleryForm.image_url,
     is_visible: galleryForm.is_visible
   }
 
-  const { error } = editingGallery.value
-    ? await supabase.from('gallery_items').update(payload).eq('id', editingGallery.value.id)
-    : await supabase.from('gallery_items').insert([payload])
+  const result = editingGallery.value
+    ? await supabase.from('gallery_items').update({ ...basePayload, image_url: imageUrls[0] }).eq('id', editingGallery.value.id)
+    : await supabase.from('gallery_items').insert(imageUrls.map((imageUrl) => ({ ...basePayload, image_url: imageUrl })))
+
+  const { error } = result
 
   saving.value = false
 
@@ -730,8 +742,9 @@ async function saveGalleryItem() {
   }
 
   const wasEditing = Boolean(editingGallery.value)
+  const addedCount = imageUrls.length
   closeGalleryForm()
-  showToast(wasEditing ? 'Gallery item updated.' : 'Added to gallery.')
+  showToast(wasEditing ? 'Gallery item updated.' : `${addedCount} gallery photo${addedCount === 1 ? '' : 's'} added.`)
   await loadGallery()
 }
 
@@ -774,6 +787,13 @@ async function uploadFile(event, type) {
   const files = Array.from(event.target.files || [])
   if (!files.length) return
 
+  const invalidFile = files.find((file) => type === 'video' && file.size > maxVideoUploadBytes)
+  if (invalidFile) {
+    event.target.value = ''
+    showToast(`${invalidFile.name} is ${formatFileSize(invalidFile.size)}. Video must be under ${videoUploadLimitLabel}. Compress or trim it first.`, 'error')
+    return
+  }
+
   if (type === 'image') uploadingImage.value = true
   if (type === 'video') uploadingVideo.value = true
   if (type === 'gallery') uploadingGallery.value = true
@@ -801,7 +821,10 @@ async function uploadFile(event, type) {
       productForm.image_url = productForm.image_urls[0] || ''
     }
     if (type === 'video') productForm.video_url = uploadedUrls[0] || ''
-    if (type === 'gallery') galleryForm.image_url = uploadedUrls[0] || ''
+    if (type === 'gallery') {
+      galleryForm.image_urls = editingGallery.value ? uploadedUrls.slice(0, 1) : [...normalizeGalleryPhotos(galleryForm), ...uploadedUrls]
+      galleryForm.image_url = galleryForm.image_urls[0] || ''
+    }
     if (type === 'owner') siteForm.owner_photo_url = uploadedUrls[0] || ''
   } finally {
     event.target.value = ''
@@ -821,12 +844,26 @@ function removeProductPhoto(index) {
   productForm.image_url = productForm.image_urls[0] || ''
 }
 
+function normalizeGalleryPhotos(item) {
+  return [...new Set([...(Array.isArray(item.image_urls) ? item.image_urls : []), item.image_url].filter(Boolean))]
+}
+
+function removeGalleryPhoto(index) {
+  galleryForm.image_urls.splice(index, 1)
+  galleryForm.image_url = galleryForm.image_urls[0] || ''
+}
+
 function uploadErrorMessage(error, type) {
   const message = error?.message || 'Upload failed.'
   if (type === 'video' && message.toLowerCase().includes('limit')) {
-    return 'Video exceeds the storage upload limit. Please trim or compress it, then upload again.'
+    return `Video exceeds the storage upload limit. Keep it under ${videoUploadLimitLabel}, or trim/compress it and upload again.`
   }
   return message
+}
+
+function formatFileSize(bytes) {
+  if (!bytes) return '0 MB'
+  return `${(bytes / 1024 / 1024).toFixed(bytes >= 10 * 1024 * 1024 ? 0 : 1)} MB`
 }
 
 async function loadSiteSettings() {
@@ -1787,6 +1824,43 @@ onMounted(async () => {
 
   .modal-overlay {
     padding: 12px;
+    align-items: flex-end;
+  }
+
+  .modal {
+    width: 100%;
+    max-height: calc(100dvh - 24px);
+    border-radius: 18px;
+  }
+
+  .modal-header,
+  .modal-footer {
+    padding: 14px 16px;
+  }
+
+  .modal-body {
+    padding: 16px;
+  }
+
+  .modal-title {
+    font-size: 19px;
+  }
+
+  .modal-footer {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .modal-footer .admin-btn {
+    width: 100%;
+  }
+
+  .upload-zone {
+    min-height: 118px;
+  }
+
+  .photo-preview-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 </style>
