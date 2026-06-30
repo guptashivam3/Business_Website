@@ -654,7 +654,7 @@ async function loadSiteSettings() {
 }
 
 .social-section {
-  padding: 26px 0 0;
+  padding: 16px 0 0;
 }
 
 .featured-slide-enter-active,

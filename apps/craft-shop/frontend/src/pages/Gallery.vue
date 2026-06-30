@@ -343,7 +343,7 @@ async function loadGallery() {
 }
 
 .gallery-social {
-  padding: 0 0 26px;
+  padding: 0 0 18px;
 }
 
 .section-label {
