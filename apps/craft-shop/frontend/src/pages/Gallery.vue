@@ -135,6 +135,9 @@
           <RouterLink to="/">Shop</RouterLink>
           <RouterLink to="/about">About Us</RouterLink>
           <a :href="customIdeaLink" target="_blank" rel="noopener" @click="trackCustomIdea">WhatsApp</a>
+          <a :href="`tel:${ownerPhone}`" class="footer-contact-link">
+            <span class="footer-icon phone" aria-hidden="true"></span>{{ displayPhone }}
+          </a>
           <a :href="`mailto:${ownerEmail}`" class="footer-contact-link">
             <span class="footer-icon email" aria-hidden="true"></span>{{ ownerEmail }}
           </a>
@@ -160,13 +163,16 @@ const lightboxItem = ref(null)
 const activeLightboxImage = ref('')
 const currentYear = new Date().getFullYear()
 const siteSettings = reactive({
+  owner_phone: '+918793662673',
   owner_email: 'laxmigupta8888@gmail.com',
   owner_instagram: 'laxmi_creations'
 })
 
 const lightboxImages = computed(() => (lightboxItem.value ? galleryImages(lightboxItem.value) : []))
 const activeLightboxIndex = computed(() => Math.max(0, lightboxImages.value.indexOf(activeLightboxImage.value)))
+const ownerPhone = computed(() => siteSettings.owner_phone || '+918793662673')
 const ownerEmail = computed(() => siteSettings.owner_email || 'laxmigupta8888@gmail.com')
+const displayPhone = computed(() => ownerPhone.value.replace(/^(\+91)(\d{5})(\d{5})$/, '$1 $2 $3'))
 const instagramHandle = computed(() => cleanInstagramHandle(siteSettings.owner_instagram || 'laxmi_creations'))
 const instagramLink = computed(() => `https://www.instagram.com/${instagramHandle.value.replace('@', '')}`)
 
@@ -268,7 +274,7 @@ async function loadGallery() {
 }
 
 async function loadSiteSettings() {
-  const { data, error } = await supabase.from('site_settings').select('owner_email, owner_instagram').eq('id', 'about').maybeSingle()
+  const { data, error } = await supabase.from('site_settings').select('owner_phone, owner_email, owner_instagram').eq('id', 'about').maybeSingle()
   if (!error && data) Object.assign(siteSettings, data)
 }
 </script>
@@ -867,6 +873,11 @@ async function loadSiteSettings() {
 .footer-icon.email {
   -webkit-mask-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M4 5h16c1.1 0 2 .9 2 2v10c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V7c0-1.1.9-2 2-2Zm0 3.2V17h16V8.2l-8 5.2-8-5.2Zm1.2-1.2 6.8 4.4L18.8 7H5.2Z'/%3E%3C/svg%3E");
   mask-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M4 5h16c1.1 0 2 .9 2 2v10c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V7c0-1.1.9-2 2-2Zm0 3.2V17h16V8.2l-8 5.2-8-5.2Zm1.2-1.2 6.8 4.4L18.8 7H5.2Z'/%3E%3C/svg%3E");
+}
+
+.footer-icon.phone {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M6.6 10.8c1.5 3 3.9 5.4 6.6 6.6l2.2-2.2c.3-.3.8-.4 1.2-.2 1.3.4 2.6.6 4 .6.7 0 1.2.5 1.2 1.2v3.5c0 .7-.5 1.2-1.2 1.2C10.5 21.5 2.5 13.5 2.5 3.4c0-.7.5-1.2 1.2-1.2h3.5c.7 0 1.2.5 1.2 1.2 0 1.4.2 2.8.6 4 .1.4 0 .8-.3 1.1l-2.1 2.3Z'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M6.6 10.8c1.5 3 3.9 5.4 6.6 6.6l2.2-2.2c.3-.3.8-.4 1.2-.2 1.3.4 2.6.6 4 .6.7 0 1.2.5 1.2 1.2v3.5c0 .7-.5 1.2-1.2 1.2C10.5 21.5 2.5 13.5 2.5 3.4c0-.7.5-1.2 1.2-1.2h3.5c.7 0 1.2.5 1.2 1.2 0 1.4.2 2.8.6 4 .1.4 0 .8-.3 1.1l-2.1 2.3Z'/%3E%3C/svg%3E");
 }
 
 .footer-icon.instagram {

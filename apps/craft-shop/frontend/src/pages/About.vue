@@ -81,21 +81,7 @@
             <h2>Have an idea for a gift?</h2>
             <p>Share the occasion, budget, preferred colors, and delivery date. {{ siteSettings.owner_name }} will confirm what can be made.</p>
           </div>
-          <div class="contact-cards">
-            <a :href="`tel:${ownerPhone}`" class="contact-card">
-              <span>Phone</span>
-              <strong>{{ displayPhone }}</strong>
-            </a>
-            <a :href="`mailto:${ownerEmail}`" class="contact-card">
-              <span class="contact-icon email" aria-hidden="true"></span>
-              <span>Email</span>
-              <strong>{{ siteSettings.owner_email }}</strong>
-            </a>
-            <a :href="instagramLink" target="_blank" rel="noopener" class="contact-card">
-              <span class="contact-icon instagram" aria-hidden="true"></span>
-              <span>Instagram</span>
-              <strong>{{ instagramHandle }}</strong>
-            </a>
+          <div class="contact-actions">
             <a :href="whatsAppLink('Namaste Laxmi ji,\n\nI saw your website and want to place a custom handmade order.\n\nPlease help me with design options, budget, delivery timing, and what details you need from me.')" target="_blank" rel="noopener" class="contact-card highlight" @click="trackAboutWhatsApp('about_contact_card')">
               <span>WhatsApp</span>
               <strong>Start an order</strong>
@@ -115,6 +101,9 @@
           <RouterLink to="/">Shop</RouterLink>
           <RouterLink to="/gallery">Gallery</RouterLink>
           <a :href="whatsAppLink('Namaste Laxmi ji,\n\nI saw your About Us page and want to discuss a handmade order.\n\nPlease share design options, pricing, and delivery timing.')" target="_blank" rel="noopener" @click="trackAboutWhatsApp('about_footer_whatsapp')">WhatsApp</a>
+          <a :href="`tel:${ownerPhone}`" class="footer-contact-link">
+            <span class="footer-icon phone" aria-hidden="true"></span>{{ displayPhone }}
+          </a>
           <a :href="`mailto:${ownerEmail}`" class="footer-contact-link">
             <span class="footer-icon email" aria-hidden="true"></span>{{ ownerEmail }}
           </a>
@@ -444,7 +433,7 @@ async function loadSiteSettings() {
   color: #c8bdb3;
 }
 
-.contact-cards {
+.contact-actions {
   display: grid;
   gap: 12px;
 }
@@ -483,20 +472,6 @@ async function loadSiteSettings() {
 .contact-card strong {
   overflow-wrap: anywhere;
   font-size: 18px;
-}
-
-.contact-icon {
-  display: inline-block;
-  width: 28px;
-  height: 28px;
-  margin-bottom: 4px;
-  background-color: #ffffff;
-  -webkit-mask-position: center;
-  -webkit-mask-repeat: no-repeat;
-  -webkit-mask-size: 22px 22px;
-  mask-position: center;
-  mask-repeat: no-repeat;
-  mask-size: 22px 22px;
 }
 
 .footer {
@@ -582,6 +557,11 @@ async function loadSiteSettings() {
   mask-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M4 5h16c1.1 0 2 .9 2 2v10c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V7c0-1.1.9-2 2-2Zm0 3.2V17h16V8.2l-8 5.2-8-5.2Zm1.2-1.2 6.8 4.4L18.8 7H5.2Z'/%3E%3C/svg%3E");
 }
 
+.footer-icon.phone {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M6.6 10.8c1.5 3 3.9 5.4 6.6 6.6l2.2-2.2c.3-.3.8-.4 1.2-.2 1.3.4 2.6.6 4 .6.7 0 1.2.5 1.2 1.2v3.5c0 .7-.5 1.2-1.2 1.2C10.5 21.5 2.5 13.5 2.5 3.4c0-.7.5-1.2 1.2-1.2h3.5c.7 0 1.2.5 1.2 1.2 0 1.4.2 2.8.6 4 .1.4 0 .8-.3 1.1l-2.1 2.3Z'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M6.6 10.8c1.5 3 3.9 5.4 6.6 6.6l2.2-2.2c.3-.3.8-.4 1.2-.2 1.3.4 2.6.6 4 .6.7 0 1.2.5 1.2 1.2v3.5c0 .7-.5 1.2-1.2 1.2C10.5 21.5 2.5 13.5 2.5 3.4c0-.7.5-1.2 1.2-1.2h3.5c.7 0 1.2.5 1.2 1.2 0 1.4.2 2.8.6 4 .1.4 0 .8-.3 1.1l-2.1 2.3Z'/%3E%3C/svg%3E");
+}
+
 .footer-icon.instagram {
   -webkit-mask-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M7.8 2h8.4A5.8 5.8 0 0 1 22 7.8v8.4a5.8 5.8 0 0 1-5.8 5.8H7.8A5.8 5.8 0 0 1 2 16.2V7.8A5.8 5.8 0 0 1 7.8 2Zm0 2A3.8 3.8 0 0 0 4 7.8v8.4A3.8 3.8 0 0 0 7.8 20h8.4a3.8 3.8 0 0 0 3.8-3.8V7.8A3.8 3.8 0 0 0 16.2 4H7.8Zm8.8 2.3a1.1 1.1 0 1 1 0 2.2 1.1 1.1 0 0 1 0-2.2ZM12 7.2a4.8 4.8 0 1 1 0 9.6 4.8 4.8 0 0 1 0-9.6Zm0 2a2.8 2.8 0 1 0 0 5.6 2.8 2.8 0 0 0 0-5.6Z'/%3E%3C/svg%3E");
   mask-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M7.8 2h8.4A5.8 5.8 0 0 1 22 7.8v8.4a5.8 5.8 0 0 1-5.8 5.8H7.8A5.8 5.8 0 0 1 2 16.2V7.8A5.8 5.8 0 0 1 7.8 2Zm0 2A3.8 3.8 0 0 0 4 7.8v8.4A3.8 3.8 0 0 0 7.8 20h8.4a3.8 3.8 0 0 0 3.8-3.8V7.8A3.8 3.8 0 0 0 16.2 4H7.8Zm8.8 2.3a1.1 1.1 0 1 1 0 2.2 1.1 1.1 0 0 1 0-2.2ZM12 7.2a4.8 4.8 0 1 1 0 9.6 4.8 4.8 0 0 1 0-9.6Zm0 2a2.8 2.8 0 1 0 0 5.6 2.8 2.8 0 0 0 0-5.6Z'/%3E%3C/svg%3E");
@@ -590,16 +570,6 @@ async function loadSiteSettings() {
 .footer-copy {
   margin: 16px 0 0;
   text-align: center;
-}
-
-.contact-icon.email {
-  -webkit-mask-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M4 5h16c1.1 0 2 .9 2 2v10c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V7c0-1.1.9-2 2-2Zm0 3.2V17h16V8.2l-8 5.2-8-5.2Zm1.2-1.2 6.8 4.4L18.8 7H5.2Z'/%3E%3C/svg%3E");
-  mask-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M4 5h16c1.1 0 2 .9 2 2v10c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V7c0-1.1.9-2 2-2Zm0 3.2V17h16V8.2l-8 5.2-8-5.2Zm1.2-1.2 6.8 4.4L18.8 7H5.2Z'/%3E%3C/svg%3E");
-}
-
-.contact-icon.instagram {
-  -webkit-mask-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M7.8 2h8.4A5.8 5.8 0 0 1 22 7.8v8.4a5.8 5.8 0 0 1-5.8 5.8H7.8A5.8 5.8 0 0 1 2 16.2V7.8A5.8 5.8 0 0 1 7.8 2Zm0 2A3.8 3.8 0 0 0 4 7.8v8.4A3.8 3.8 0 0 0 7.8 20h8.4a3.8 3.8 0 0 0 3.8-3.8V7.8A3.8 3.8 0 0 0 16.2 4H7.8Zm8.8 2.3a1.1 1.1 0 1 1 0 2.2 1.1 1.1 0 0 1 0-2.2ZM12 7.2a4.8 4.8 0 1 1 0 9.6 4.8 4.8 0 0 1 0-9.6Zm0 2a2.8 2.8 0 1 0 0 5.6 2.8 2.8 0 0 0 0-5.6Z'/%3E%3C/svg%3E");
-  mask-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M7.8 2h8.4A5.8 5.8 0 0 1 22 7.8v8.4a5.8 5.8 0 0 1-5.8 5.8H7.8A5.8 5.8 0 0 1 2 16.2V7.8A5.8 5.8 0 0 1 7.8 2Zm0 2A3.8 3.8 0 0 0 4 7.8v8.4A3.8 3.8 0 0 0 7.8 20h8.4a3.8 3.8 0 0 0 3.8-3.8V7.8A3.8 3.8 0 0 0 16.2 4H7.8Zm8.8 2.3a1.1 1.1 0 1 1 0 2.2 1.1 1.1 0 0 1 0-2.2ZM12 7.2a4.8 4.8 0 1 1 0 9.6 4.8 4.8 0 0 1 0-9.6Zm0 2a2.8 2.8 0 1 0 0 5.6 2.8 2.8 0 0 0 0-5.6Z'/%3E%3C/svg%3E");
 }
 
 @media (max-width: 780px) {
