@@ -117,6 +117,19 @@ create table if not exists public.orders (
   created_at timestamptz default now()
 );
 
+create table if not exists public.analytics_events (
+  id uuid primary key default gen_random_uuid(),
+  event_type text not null,
+  page_path text,
+  product_id uuid references public.products(id) on delete set null,
+  product_name text,
+  metadata jsonb default '{}'::jsonb,
+  created_at timestamptz default now(),
+  constraint analytics_events_allowed_type check (
+    event_type in ('page_view', 'product_view', 'whatsapp_click', 'gallery_view', 'custom_order_click')
+  )
+);
+
 alter table public.categories enable row level security;
 alter table public.products enable row level security;
 alter table public.gallery_items enable row level security;
@@ -124,6 +137,7 @@ alter table public.site_settings enable row level security;
 alter table public.admin_users enable row level security;
 alter table public.gallery enable row level security;
 alter table public.orders enable row level security;
+alter table public.analytics_events enable row level security;
 
 drop policy if exists "Public can read categories" on public.categories;
 drop policy if exists "Public can read products" on public.products;
@@ -139,6 +153,8 @@ drop policy if exists "Authenticated users can manage site settings" on public.s
 drop policy if exists "Admin can manage gallery" on public.gallery;
 drop policy if exists "Authenticated users can read orders" on public.orders;
 drop policy if exists "Anyone can create order inquiry" on public.orders;
+drop policy if exists "Anyone can create analytics events" on public.analytics_events;
+drop policy if exists "Authenticated admins can read analytics events" on public.analytics_events;
 
 -- Public can read categories and available products
 create policy "Public can read categories"
@@ -204,6 +220,16 @@ using (public.is_admin());
 create policy "Anyone can create order inquiry"
 on public.orders for insert
 with check (true);
+
+create policy "Anyone can create analytics events"
+on public.analytics_events for insert
+with check (
+  event_type in ('page_view', 'product_view', 'whatsapp_click', 'gallery_view', 'custom_order_click')
+);
+
+create policy "Authenticated admins can read analytics events"
+on public.analytics_events for select
+using (public.is_admin());
 
 -- Storage bucket must be created in Supabase UI:
 -- Bucket name: product-media

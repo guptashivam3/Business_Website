@@ -83,11 +83,11 @@
             <p class="pd-order-title">How to Order</p>
 
             <div class="pd-order-btns">
-              <a :href="waOrderLink" target="_blank" rel="noopener" class="pd-btn whatsapp full">
+              <a :href="waOrderLink" target="_blank" rel="noopener" class="pd-btn whatsapp full" @click="trackProductWhatsApp('product_order')">
                 Order on WhatsApp
               </a>
 
-              <a :href="waEnquiryLink" target="_blank" rel="noopener" class="pd-btn outline full">
+              <a :href="waEnquiryLink" target="_blank" rel="noopener" class="pd-btn outline full" @click="trackProductWhatsApp('product_enquiry')">
                 Ask a Question
               </a>
             </div>
@@ -143,10 +143,10 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { supabase } from '../lib/supabase.js'
+import { enquiryMessage, makeWhatsAppLink, orderMessage, trackEvent } from '../lib/analytics.js'
 
 const route = useRoute()
 const shopName = import.meta.env.VITE_SHOP_NAME || 'Laxmi Creations'
-const phone = import.meta.env.VITE_WHATSAPP_PHONE || ''
 const upiId = import.meta.env.VITE_UPI_ID || 'yourupi@upi'
 const showUpiPayment = false
 
@@ -162,14 +162,22 @@ const productImages = computed(() => {
 })
 
 const waOrderLink = computed(() => {
-  const message = `Hi! I would like to order:\n\n${product.value?.name} - Rs ${product.value?.price}\n\nPlease confirm availability and delivery details.`
-  return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`
+  return makeWhatsAppLink(orderMessage(product.value))
 })
 
 const waEnquiryLink = computed(() => {
-  const message = `Hi! I have a question about: ${product.value?.name}`
-  return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`
+  return makeWhatsAppLink(enquiryMessage(product.value))
 })
+
+function trackProductWhatsApp(source) {
+  trackEvent('whatsapp_click', {
+    source,
+    product_id: product.value?.id,
+    product_name: product.value?.name,
+    category: product.value?.category,
+    page_path: route.fullPath
+  })
+}
 
 async function copyUPI() {
   await navigator.clipboard.writeText(upiId)
@@ -192,6 +200,15 @@ async function loadProduct() {
   if (error) console.error(error)
   product.value = data || null
   activeImage.value = productImages.value[0] || ''
+  if (product.value) {
+    trackEvent('product_view', {
+      source: 'product_detail',
+      product_id: product.value.id,
+      product_name: product.value.name,
+      category: product.value.category,
+      page_path: route.fullPath
+    })
+  }
   loading.value = false
 }
 </script>

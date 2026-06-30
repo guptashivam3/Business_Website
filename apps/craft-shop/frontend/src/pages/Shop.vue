@@ -39,7 +39,7 @@
             </div>
           </div>
           <div class="hero-actions">
-            <a :href="whatsAppLink('Hi! I would like to place an order.')" target="_blank" rel="noopener" class="shop-btn whatsapp large">
+            <a :href="whatsAppLink(orderStartMessage)" target="_blank" rel="noopener" class="shop-btn whatsapp large" @click="trackWhatsApp('hero_order')">
               Chat to Order
             </a>
             <RouterLink to="/gallery" class="shop-btn outline large">View Gallery</RouterLink>
@@ -209,10 +209,10 @@
           <p>Send a message with your color, size, and occasion. The owner will confirm details personally.</p>
         </div>
         <div class="cta-btns">
-          <a :href="whatsAppLink('Hi! I want to place an order.')" target="_blank" rel="noopener" class="shop-btn whatsapp">
+          <a :href="whatsAppLink(orderStartMessage)" target="_blank" rel="noopener" class="shop-btn whatsapp" @click="trackWhatsApp('cta_order')">
             Place Order
           </a>
-          <a :href="whatsAppLink('Hi! I have a question.')" target="_blank" rel="noopener" class="shop-btn dark-outline">
+          <a :href="whatsAppLink(enquiryStartMessage)" target="_blank" rel="noopener" class="shop-btn dark-outline" @click="trackWhatsApp('cta_enquiry')">
             Enquiry
           </a>
         </div>
@@ -228,7 +228,7 @@
         <div class="footer-links">
           <RouterLink to="/about">About Us</RouterLink>
           <RouterLink to="/gallery">Gallery</RouterLink>
-          <a :href="whatsAppLink('Hi!')" target="_blank" rel="noopener">WhatsApp</a>
+          <a :href="whatsAppLink(enquiryStartMessage)" target="_blank" rel="noopener" @click="trackWhatsApp('footer_whatsapp')">WhatsApp</a>
           <a :href="`mailto:${ownerEmail}`" class="footer-contact-link">
             <span class="footer-icon email" aria-hidden="true"></span>{{ ownerEmail }}
           </a>
@@ -240,7 +240,7 @@
       <p class="footer-copy">Copyright {{ currentYear }} {{ shopName }}. All rights reserved.</p>
     </footer>
 
-    <a :href="whatsAppLink('Hi! I want to discuss a handmade order.')" target="_blank" rel="noopener" class="floating-wa">
+    <a :href="whatsAppLink(customOrderMessage)" target="_blank" rel="noopener" class="floating-wa" @click="trackWhatsApp('floating_custom_order')">
       <span>WhatsApp</span>
       <strong>Custom Order</strong>
     </a>
@@ -250,9 +250,9 @@
 <script setup>
 import { computed, onMounted, onUnmounted, reactive, ref } from 'vue'
 import { supabase } from '../lib/supabase.js'
+import { makeWhatsAppLink, trackEvent } from '../lib/analytics.js'
 
 const shopName = import.meta.env.VITE_SHOP_NAME || 'Laxmi Creations'
-const phone = import.meta.env.VITE_WHATSAPP_PHONE || ''
 const products = ref([])
 const activeCategory = ref('All')
 const searchQuery = ref('')
@@ -272,6 +272,9 @@ const featuredPageSize = computed(() => (isMobile.value ? 1 : 4))
 const ownerEmail = computed(() => siteSettings.owner_email || 'laxmigupta8888@gmail.com')
 const instagramHandle = computed(() => cleanInstagramHandle(siteSettings.owner_instagram || 'laxmi_creations'))
 const instagramLink = computed(() => `https://www.instagram.com/${instagramHandle.value.replace('@', '')}`)
+const orderStartMessage = 'Namaste Laxmi ji,\n\nI saw Laxmi Creations and would like to place an order.\n\nPlease share available designs, pricing, customization options, payment details, and delivery timing.'
+const enquiryStartMessage = 'Namaste Laxmi ji,\n\nI saw your handmade craft website and have a question.\n\nPlease help me with available designs, customization, pricing, and delivery details.'
+const customOrderMessage = 'Namaste Laxmi ji,\n\nI want to discuss a custom handmade order for gifting or a celebration.\n\nPlease share what details you need from my side.'
 
 const processSteps = [
   {
@@ -359,7 +362,11 @@ function resetFilters() {
 }
 
 function whatsAppLink(message) {
-  return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`
+  return makeWhatsAppLink(message)
+}
+
+function trackWhatsApp(source) {
+  trackEvent('whatsapp_click', { source, page_path: '/' })
 }
 
 function cleanInstagramHandle(value) {

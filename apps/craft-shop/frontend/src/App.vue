@@ -30,9 +30,9 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
+import { makeWhatsAppLink, trackEvent } from './lib/analytics.js'
 
 const route = useRoute()
-const phone = import.meta.env.VITE_WHATSAPP_PHONE || ''
 const whatsAppActive = ref(false)
 let whatsAppTimer = null
 
@@ -43,11 +43,12 @@ const activeMobileIndex = computed(() => {
   return 0
 })
 const whatsAppLink = computed(() => {
-  const message = 'Hi! I want to discuss a handmade order.'
-  return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`
+  const message = 'Namaste Laxmi ji,\n\nI saw Laxmi Creations and want to discuss a handmade order.\n\nPlease share available designs, customization options, pricing, and delivery timing.'
+  return makeWhatsAppLink(message)
 })
 
 function markWhatsAppActive() {
+  trackEvent('whatsapp_click', { source: 'mobile_action_bar', page_path: route.fullPath })
   whatsAppActive.value = true
   clearTimeout(whatsAppTimer)
   whatsAppTimer = setTimeout(() => {
@@ -57,9 +58,13 @@ function markWhatsAppActive() {
 
 watch(
   () => route.fullPath,
-  () => {
+  (path) => {
     whatsAppActive.value = false
     clearTimeout(whatsAppTimer)
+    trackEvent('page_view', { page_path: path, source: 'router' })
+  },
+  {
+    immediate: true
   }
 )
 </script>

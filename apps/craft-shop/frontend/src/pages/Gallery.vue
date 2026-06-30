@@ -106,7 +106,7 @@
           <p v-if="lightboxItem.category" class="gallery-cat">{{ lightboxItem.category }}</p>
           <h3 class="lightbox-title">{{ lightboxItem.title }}</h3>
           <p v-if="lightboxItem.description" class="lightbox-desc">{{ lightboxItem.description }}</p>
-          <a :href="customOrderLink(lightboxItem)" target="_blank" rel="noopener" class="gallery-btn whatsapp">
+          <a :href="customOrderLink(lightboxItem)" target="_blank" rel="noopener" class="gallery-btn whatsapp" @click="trackGalleryOrder(lightboxItem)">
             Order Something Similar
           </a>
         </div>
@@ -119,7 +119,7 @@
         <h2 class="gallery-cta-title">We can make it for you</h2>
         <p class="gallery-cta-sub">Custom orders are welcome. Share your idea and we will confirm details on WhatsApp.</p>
         <div class="gallery-cta-btns">
-          <a :href="customIdeaLink" target="_blank" rel="noopener" class="gallery-btn whatsapp large">Place a Custom Order</a>
+          <a :href="customIdeaLink" target="_blank" rel="noopener" class="gallery-btn whatsapp large" @click="trackCustomIdea">Place a Custom Order</a>
           <RouterLink to="/" class="gallery-btn outline large">Browse Shop</RouterLink>
         </div>
       </div>
@@ -130,9 +130,9 @@
 <script setup>
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { supabase } from '../lib/supabase.js'
+import { makeWhatsAppLink, trackEvent } from '../lib/analytics.js'
 
 const shopName = import.meta.env.VITE_SHOP_NAME || 'Laxmi Creations'
-const phone = import.meta.env.VITE_WHATSAPP_PHONE || ''
 const items = ref([])
 const loading = ref(true)
 const lightboxItem = ref(null)
@@ -142,23 +142,42 @@ const lightboxImages = computed(() => (lightboxItem.value ? galleryImages(lightb
 const activeLightboxIndex = computed(() => Math.max(0, lightboxImages.value.indexOf(activeLightboxImage.value)))
 
 const customIdeaLink = computed(() => {
-  const message = 'Hi! I saw your gallery and have a custom order idea.'
+  const message = 'Namaste Laxmi ji,\n\nI saw your gallery and have a custom handmade order idea.\n\nPlease help me plan the design, budget, timeline, and delivery details.'
   return whatsAppLink(message)
 })
 
 function whatsAppLink(message) {
-  return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`
+  return makeWhatsAppLink(message)
 }
 
 function customOrderLink(item) {
   return whatsAppLink(
-    `Hi! I saw this gallery design and would like something similar.\n\nDesign: ${item.title}\nImage: ${mainGalleryImage(item)}\n\nPlease share options and pricing.`
+    `Namaste Laxmi ji,\n\nI saw this inspiration design in your gallery and would like something similar.\n\nDesign: ${item.title}\nCategory: ${item.category || 'Custom handmade work'}\nImage reference: ${mainGalleryImage(item)}\n\nPlease share possible options, price range, customization details, and delivery timing.`
   )
+}
+
+function trackGalleryOrder(item) {
+  trackEvent('custom_order_click', {
+    source: 'gallery_lightbox',
+    title: item?.title,
+    category: item?.category,
+    page_path: '/gallery'
+  })
+}
+
+function trackCustomIdea() {
+  trackEvent('custom_order_click', { source: 'gallery_cta', page_path: '/gallery' })
 }
 
 function openLightbox(item) {
   lightboxItem.value = item
   activeLightboxImage.value = mainGalleryImage(item)
+  trackEvent('gallery_view', {
+    source: 'gallery_card',
+    title: item.title,
+    category: item.category,
+    page_path: '/gallery'
+  })
   document.body.style.overflow = 'hidden'
 }
 

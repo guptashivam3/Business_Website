@@ -23,7 +23,7 @@
               {{ siteSettings.about_intro }}
             </p>
             <div class="about-actions">
-              <a :href="whatsAppLink('Hi Laxmi ji, I want to discuss a handmade order.')" target="_blank" rel="noopener" class="about-btn primary">
+              <a :href="whatsAppLink('Namaste Laxmi ji,\n\nI saw Laxmi Creations and want to discuss a handmade order.\n\nPlease share available designs, customization options, pricing, and delivery timing.')" target="_blank" rel="noopener" class="about-btn primary" @click="trackAboutWhatsApp('about_hero')">
                 Message on WhatsApp
               </a>
               <RouterLink to="/gallery" class="about-btn outline">View Work</RouterLink>
@@ -97,7 +97,7 @@
               <span>Instagram</span>
               <strong>{{ instagramHandle }}</strong>
             </a>
-            <a :href="whatsAppLink('Hi Laxmi ji, I saw your website and want to place a custom order.')" target="_blank" rel="noopener" class="contact-card highlight">
+            <a :href="whatsAppLink('Namaste Laxmi ji,\n\nI saw your website and want to place a custom handmade order.\n\nPlease help me with design options, budget, delivery timing, and what details you need from me.')" target="_blank" rel="noopener" class="contact-card highlight" @click="trackAboutWhatsApp('about_contact_card')">
               <span>WhatsApp</span>
               <strong>Start an order</strong>
             </a>
@@ -111,6 +111,7 @@
 <script setup>
 import { computed, onMounted, reactive } from 'vue'
 import { supabase } from '../lib/supabase.js'
+import { makeWhatsAppLink, trackEvent } from '../lib/analytics.js'
 
 const shopName = import.meta.env.VITE_SHOP_NAME || 'Laxmi Creations'
 const siteSettings = reactive({
@@ -132,7 +133,11 @@ const instagramHandle = computed(() => cleanHandle(siteSettings.owner_instagram 
 const instagramLink = computed(() => `https://www.instagram.com/${instagramHandle.value.replace('@', '')}`)
 
 function whatsAppLink(message) {
-  return `https://wa.me/${ownerPhone.value.replace('+', '')}?text=${encodeURIComponent(message)}`
+  return makeWhatsAppLink(message)
+}
+
+function trackAboutWhatsApp(source) {
+  trackEvent('whatsapp_click', { source, page_path: '/about' })
 }
 
 function cleanHandle(value) {

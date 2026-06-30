@@ -41,6 +41,9 @@
       </section>
 
       <div class="admin-tabs">
+        <button class="admin-tab" :class="{ active: tab === 'dashboard' }" type="button" @click="tab = 'dashboard'">
+          Dashboard
+        </button>
         <button class="admin-tab" :class="{ active: tab === 'products' }" type="button" @click="tab = 'products'">
           Products <span class="tab-count">{{ products.length }}</span>
         </button>
@@ -51,6 +54,98 @@
           Site Details
         </button>
       </div>
+
+      <section v-if="tab === 'dashboard'" class="tab-content" v-reveal="{ delay: 80 }">
+        <div class="tab-header">
+          <div>
+            <h2 class="tab-title">Dashboard Analytics</h2>
+            <p class="tab-sub">Track visitor interest, product views, and WhatsApp order clicks.</p>
+          </div>
+          <button class="admin-btn outline small" type="button" @click="loadAnalytics">Refresh</button>
+        </div>
+
+        <div v-if="analyticsError" class="empty-state compact">
+          <div class="empty-state-icon">SQL</div>
+          <h3>Analytics setup needed</h3>
+          <p>{{ analyticsError }}</p>
+        </div>
+
+        <div v-else>
+          <div class="analytics-grid">
+            <div class="analytics-card">
+              <span>Page Views</span>
+              <strong>{{ pageViewCount }}</strong>
+              <p>Total website visits tracked</p>
+            </div>
+            <div class="analytics-card">
+              <span>Product Views</span>
+              <strong>{{ productViewCount }}</strong>
+              <p>Product detail opens</p>
+            </div>
+            <div class="analytics-card">
+              <span>WhatsApp Clicks</span>
+              <strong>{{ whatsappClickCount }}</strong>
+              <p>Order or enquiry starts</p>
+            </div>
+            <div class="analytics-card">
+              <span>Gallery Interest</span>
+              <strong>{{ galleryInterestCount }}</strong>
+              <p>Gallery views and custom ideas</p>
+            </div>
+          </div>
+
+          <div class="analytics-panels">
+            <section class="analytics-panel">
+              <div class="panel-heading">
+                <h3>Top Product Interest</h3>
+                <span>{{ loadingAnalytics ? 'Loading...' : `${topProducts.length} items` }}</span>
+              </div>
+              <div v-if="topProducts.length === 0" class="mini-empty">No product analytics yet.</div>
+              <div v-else class="bar-list">
+                <div v-for="item in topProducts" :key="item.name" class="bar-row">
+                  <div>
+                    <strong>{{ item.name }}</strong>
+                    <span>{{ item.views }} views · {{ item.clicks }} WhatsApp clicks</span>
+                  </div>
+                  <div class="bar-track"><span :style="{ width: `${item.percent}%` }"></span></div>
+                </div>
+              </div>
+            </section>
+
+            <section class="analytics-panel">
+              <div class="panel-heading">
+                <h3>Most Visited Pages</h3>
+                <span>Last {{ analyticsEvents.length }} events</span>
+              </div>
+              <div v-if="topPages.length === 0" class="mini-empty">No page views yet.</div>
+              <div v-else class="bar-list compact">
+                <div v-for="page in topPages" :key="page.name" class="bar-row">
+                  <div>
+                    <strong>{{ page.name }}</strong>
+                    <span>{{ page.count }} visits</span>
+                  </div>
+                  <div class="bar-track"><span :style="{ width: `${page.percent}%` }"></span></div>
+                </div>
+              </div>
+            </section>
+
+            <section class="analytics-panel wide">
+              <div class="panel-heading">
+                <h3>Recent Activity</h3>
+                <span>Latest customer actions</span>
+              </div>
+              <div v-if="recentAnalytics.length === 0" class="mini-empty">Activity will appear after visitors use the site.</div>
+              <div v-else class="activity-list">
+                <div v-for="event in recentAnalytics" :key="event.id" class="activity-row">
+                  <span class="activity-type">{{ formatEventType(event.event_type) }}</span>
+                  <strong>{{ event.product_name || event.metadata?.title || event.page_path || 'Website' }}</strong>
+                  <time>{{ formatEventTime(event.created_at) }}</time>
+                </div>
+              </div>
+            </section>
+          </div>
+        </div>
+      </section>
 
       <section v-if="tab === 'products'" class="tab-content" v-reveal="{ delay: 80 }">
         <div class="tab-header">
@@ -422,12 +517,15 @@ import { supabase } from '../lib/supabase.js'
 
 const router = useRouter()
 const shopName = import.meta.env.VITE_SHOP_NAME || 'Laxmi Creations'
-const tab = ref('products')
+const tab = ref('dashboard')
 
 const products = ref([])
 const galleryItems = ref([])
+const analyticsEvents = ref([])
 const loadingProducts = ref(true)
 const loadingGallery = ref(true)
+const loadingAnalytics = ref(true)
+const analyticsError = ref('')
 const productSearch = ref('')
 const productFilter = ref('all')
 const gallerySearch = ref('')
@@ -463,6 +561,41 @@ const soldOutProducts = computed(() => products.value.filter((product) => !produ
 const featuredProducts = computed(() => products.value.filter((product) => product.is_featured).length)
 const visibleGalleryItems = computed(() => galleryItems.value.filter((item) => item.is_visible).length)
 const hiddenGalleryItems = computed(() => galleryItems.value.filter((item) => !item.is_visible).length)
+const pageViewCount = computed(() => analyticsEvents.value.filter((event) => event.event_type === 'page_view').length)
+const productViewCount = computed(() => analyticsEvents.value.filter((event) => event.event_type === 'product_view').length)
+const whatsappClickCount = computed(() => analyticsEvents.value.filter((event) => event.event_type === 'whatsapp_click' || event.event_type === 'custom_order_click').length)
+const galleryInterestCount = computed(() => analyticsEvents.value.filter((event) => event.event_type === 'gallery_view' || event.event_type === 'custom_order_click').length)
+
+const topProducts = computed(() => {
+  const grouped = new Map()
+  analyticsEvents.value
+    .filter((event) => event.product_name || event.product_id)
+    .forEach((event) => {
+      const name = event.product_name || 'Unnamed product'
+      const current = grouped.get(name) || { name, views: 0, clicks: 0, total: 0 }
+      if (event.event_type === 'product_view') current.views += 1
+      if (event.event_type === 'whatsapp_click') current.clicks += 1
+      current.total += 1
+      grouped.set(name, current)
+    })
+
+  const list = Array.from(grouped.values()).sort((a, b) => b.total - a.total).slice(0, 6)
+  const max = Math.max(1, ...list.map((item) => item.total))
+  return list.map((item) => ({ ...item, percent: Math.max(8, Math.round((item.total / max) * 100)) }))
+})
+
+const topPages = computed(() => {
+  const grouped = new Map()
+  analyticsEvents.value
+    .filter((event) => event.event_type === 'page_view' && event.page_path)
+    .forEach((event) => grouped.set(event.page_path, (grouped.get(event.page_path) || 0) + 1))
+
+  const list = Array.from(grouped, ([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count).slice(0, 6)
+  const max = Math.max(1, ...list.map((item) => item.count))
+  return list.map((item) => ({ ...item, percent: Math.max(8, Math.round((item.count / max) * 100)) }))
+})
+
+const recentAnalytics = computed(() => analyticsEvents.value.slice(0, 10))
 
 const filteredProducts = computed(() => {
   const query = productSearch.value.toLowerCase()
@@ -952,8 +1085,47 @@ async function loadGallery() {
   loadingGallery.value = false
 }
 
+async function loadAnalytics() {
+  loadingAnalytics.value = true
+  analyticsError.value = ''
+  const { data, error } = await supabase
+    .from('analytics_events')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(500)
+
+  if (error) {
+    analyticsEvents.value = []
+    analyticsError.value = `${error.message}. Run the latest schema.sql in Supabase to enable analytics.`
+  } else {
+    analyticsEvents.value = data || []
+  }
+  loadingAnalytics.value = false
+}
+
+function formatEventType(type) {
+  const labels = {
+    page_view: 'Page view',
+    product_view: 'Product view',
+    whatsapp_click: 'WhatsApp',
+    gallery_view: 'Gallery view',
+    custom_order_click: 'Custom order'
+  }
+  return labels[type] || type
+}
+
+function formatEventTime(value) {
+  if (!value) return ''
+  return new Intl.DateTimeFormat('en-IN', {
+    day: '2-digit',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit'
+  }).format(new Date(value))
+}
+
 onMounted(async () => {
-  await Promise.all([loadProducts(), loadGallery(), loadSiteSettings()])
+  await Promise.all([loadProducts(), loadGallery(), loadSiteSettings(), loadAnalytics()])
 })
 </script>
 
@@ -1196,6 +1368,161 @@ onMounted(async () => {
 .tab-sub {
   margin: 0;
   color: #77695f;
+}
+
+.analytics-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.analytics-card,
+.analytics-panel {
+  border: 1px solid #eadfd2;
+  border-radius: 22px;
+  background: rgba(255, 253, 248, 0.92);
+  box-shadow: 0 18px 48px rgba(65, 42, 24, 0.08);
+}
+
+.analytics-card {
+  padding: 20px;
+}
+
+.analytics-card span,
+.panel-heading span {
+  color: #8a4a25;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.analytics-card strong {
+  display: block;
+  margin: 8px 0 4px;
+  color: #241f1a;
+  font-size: 42px;
+  line-height: 1;
+}
+
+.analytics-card p,
+.mini-empty,
+.bar-row span {
+  margin: 0;
+  color: #77695f;
+  font-size: 14px;
+}
+
+.analytics-panels {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.analytics-panel {
+  padding: 18px;
+}
+
+.analytics-panel.wide {
+  grid-column: 1 / -1;
+}
+
+.panel-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.panel-heading h3 {
+  margin: 0;
+  color: #241f1a;
+  font-size: 18px;
+}
+
+.bar-list {
+  display: grid;
+  gap: 14px;
+}
+
+.bar-row {
+  display: grid;
+  gap: 8px;
+}
+
+.bar-row > div:first-child {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.bar-row strong {
+  min-width: 0;
+  overflow: hidden;
+  color: #241f1a;
+  font-size: 14px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bar-track {
+  overflow: hidden;
+  height: 10px;
+  border-radius: 999px;
+  background: #f2e5d7;
+}
+
+.bar-track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #a85f33, #1f9d57);
+}
+
+.activity-list {
+  display: grid;
+  border: 1px solid #eadfd2;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.activity-row {
+  display: grid;
+  grid-template-columns: 140px minmax(0, 1fr) 140px;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 14px;
+  background: #ffffff;
+}
+
+.activity-row + .activity-row {
+  border-top: 1px solid #eadfd2;
+}
+
+.activity-type {
+  border-radius: 999px;
+  padding: 6px 10px;
+  background: #f2e5d7;
+  color: #79401f;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.activity-row strong {
+  min-width: 0;
+  overflow: hidden;
+  color: #241f1a;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.activity-row time {
+  color: #77695f;
+  font-size: 13px;
+  text-align: right;
 }
 
 .admin-tools {
@@ -1725,6 +2052,19 @@ onMounted(async () => {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .analytics-grid,
+  .analytics-panels {
+    grid-template-columns: 1fr;
+  }
+
+  .activity-row {
+    grid-template-columns: 1fr;
+  }
+
+  .activity-row time {
+    text-align: left;
+  }
+
   .admin-tools {
     grid-template-columns: 1fr;
   }
@@ -1764,6 +2104,27 @@ onMounted(async () => {
 
   .overview-card p {
     font-size: 12px;
+  }
+
+  .analytics-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .analytics-card,
+  .analytics-panel {
+    border-radius: 18px;
+    padding: 15px;
+  }
+
+  .analytics-card strong {
+    font-size: 34px;
+  }
+
+  .bar-row > div:first-child {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 3px;
   }
 
   .admin-header-inner,
