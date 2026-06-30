@@ -82,9 +82,11 @@
             <p>Share the occasion, budget, preferred colors, and delivery date. {{ siteSettings.owner_name }} will confirm what can be made.</p>
           </div>
           <div class="contact-actions">
-            <a :href="whatsAppLink('Namaste Laxmi ji,\n\nI saw your website and want to place a custom handmade order.\n\nPlease help me with design options, budget, delivery timing, and what details you need from me.')" target="_blank" rel="noopener" class="contact-card highlight" @click="trackAboutWhatsApp('about_contact_card')">
-              <span>WhatsApp</span>
-              <strong>Start an order</strong>
+            <a :href="whatsAppLink('Namaste Laxmi ji,\n\nI saw your website and want to place a custom handmade order.\n\nPlease help me with design options, budget, delivery timing, and what details you need from me.')" target="_blank" rel="noopener" class="contact-btn primary" @click="trackAboutWhatsApp('about_place_order')">
+              Place Order
+            </a>
+            <a :href="whatsAppLink('Namaste Laxmi ji,\n\nI saw your About Us page and have an enquiry about handmade gifts.\n\nPlease share available designs, customization options, pricing, and delivery timing.')" target="_blank" rel="noopener" class="contact-btn outline" @click="trackAboutWhatsApp('about_enquiry')">
+              Enquiry
             </a>
           </div>
         </div>
@@ -253,7 +255,7 @@ async function loadSiteSettings() {
 .about-copy,
 .owner-card,
 .story-card,
-.contact-card {
+.contact-btn {
   animation: riseIn 560ms ease both;
 }
 
@@ -359,14 +361,6 @@ async function loadSiteSettings() {
 
 .owner-info span,
 .story-card span,
-.contact-card span {
-  color: #79401f;
-  font-size: 12px;
-  font-weight: 900;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
-
 .owner-info h2,
 .story-card h2,
 .contact-inner h2 {
@@ -434,44 +428,42 @@ async function loadSiteSettings() {
 }
 
 .contact-actions {
-  display: grid;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
   gap: 12px;
+  flex-wrap: wrap;
 }
 
-.contact-card {
-  display: grid;
-  gap: 5px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 18px;
-  padding: 18px;
-  background: rgba(255, 255, 255, 0.06);
+.contact-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 50px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  padding: 0 24px;
   color: #ffffff;
-  transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
+  font-weight: 900;
+  transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
 }
 
-.contact-card:hover {
+.contact-btn:hover {
   border-color: rgba(255, 255, 255, 0.22);
-  background: rgba(255, 255, 255, 0.1);
   transform: translateY(-1px);
 }
 
-.contact-card.highlight {
+.contact-btn.primary {
   background: #1f9d57;
   border-color: #1f9d57;
-  color: #ffffff;
 }
 
-.contact-card.highlight:hover {
+.contact-btn.primary:hover {
   background: #178f52;
 }
 
-.contact-card.highlight span {
-  color: rgba(255, 255, 255, 0.82);
-}
-
-.contact-card strong {
-  overflow-wrap: anywhere;
-  font-size: 18px;
+.contact-btn.outline {
+  background: transparent;
 }
 
 .footer {
@@ -670,10 +662,6 @@ async function loadSiteSettings() {
     padding-bottom: calc(92px + env(safe-area-inset-bottom));
   }
 
-  .contact-card {
-    padding: 16px;
-  }
-
   .footer-inner {
     align-items: flex-start;
     flex-direction: column;
@@ -688,7 +676,7 @@ async function loadSiteSettings() {
   .about-copy,
   .owner-card,
   .story-card,
-  .contact-card {
+  .contact-btn {
     animation: none;
   }
 }
