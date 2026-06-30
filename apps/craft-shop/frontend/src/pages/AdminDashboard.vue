@@ -162,49 +162,51 @@
 
           <template v-else>
             <section class="analytics-panel chart-panel">
-              <div class="panel-heading trend-heading">
-                <div>
-                  <h3>Customer trend</h3>
-                  <p class="panel-subtitle">Total customer activity across the last 14 days</p>
-                </div>
+              <div class="panel-heading">
+                <h3>Customer trend</h3>
                 <span>Last 14 days</span>
               </div>
-
-              <div class="trend-summary-strip" aria-label="Customer trend summary">
-                <div class="trend-summary-card">
+              <div class="customer-trend-summary" aria-label="Customer activity summary">
+                <div>
                   <span>Total activity</span>
                   <strong>{{ totalCustomerActivity }}</strong>
                 </div>
-                <div class="trend-summary-card">
+                <div>
                   <span>Best day</span>
                   <strong>{{ bestCustomerDay.label }}</strong>
                   <small>{{ bestCustomerDay.total }} actions</small>
                 </div>
-                <div class="trend-summary-card">
+                <div>
                   <span>Today</span>
                   <strong>{{ todayCustomerActivity }}</strong>
-                  <small>actions</small>
                 </div>
               </div>
-
               <div class="customer-trend-bars" aria-label="Daily customer activity bar chart">
-                <div
-                  v-for="day in trendBarItems"
+                <button
+                  v-for="day in dailyTrend"
                   :key="day.key"
                   class="customer-trend-day"
-                  :class="{ empty: day.total === 0 }"
-                  :data-tooltip="`${day.label}: ${day.total} total actions — ${day.page} page, ${day.product} product, ${day.whatsapp} WhatsApp`"
-                  :title="`${day.label}: ${day.total} total actions (${day.page} page, ${day.product} product, ${day.whatsapp} WhatsApp)`"
+                  type="button"
+                  @mouseenter="hoveredTrendDay = day"
+                  @mouseleave="hoveredTrendDay = null"
+                  @focus="hoveredTrendDay = day"
+                  @blur="hoveredTrendDay = null"
                 >
-                  <div class="customer-trend-bar-wrap">
-                    <span class="customer-trend-bar" :style="{ height: `${day.height}%` }"></span>
-                  </div>
-                  <small>{{ day.shortLabel }}</small>
-                </div>
+                  <span class="customer-trend-bar-wrap">
+                    <span class="customer-trend-bar" :style="{ height: `${day.totalPercent}%` }"></span>
+                  </span>
+                  <span class="customer-trend-label">{{ day.label }}</span>
+                  <span class="analytics-tooltip">
+                    <strong>{{ day.label }}</strong>
+                    <small>{{ day.total }} total actions</small>
+                    <small>{{ day.page }} page views · {{ day.product }} product views · {{ day.whatsapp }} WhatsApp clicks</small>
+                  </span>
+                </button>
               </div>
-
-              <div class="chart-legend simple trend-note">
-                <span><i class="legend-dot total"></i>Hover a bar to see page, product, and WhatsApp details</span>
+              <div v-if="hoveredTrendDay" class="analytics-hover-card trend-hover-card">
+                <strong>{{ hoveredTrendDay.label }}</strong>
+                <span>{{ hoveredTrendDay.total }} total customer actions</span>
+                <small>{{ hoveredTrendDay.page }} page views · {{ hoveredTrendDay.product }} product views · {{ hoveredTrendDay.whatsapp }} WhatsApp clicks</small>
               </div>
             </section>
 
@@ -214,45 +216,90 @@
                   <h3>Customer intent</h3>
                   <span>{{ filteredAnalytics.length }} events</span>
                 </div>
-                <div class="donut-layout">
-                  <div class="donut-chart" :style="intentDonutStyle">
+                <div class="donut-layout hoverable-donut-layout">
+                  <div class="donut-chart" :style="intentDonutStyle" aria-label="Customer intent breakdown">
                     <div>
                       <strong>{{ filteredAnalytics.length }}</strong>
                       <span>Total</span>
                     </div>
                   </div>
-                  <div class="donut-legend">
-                    <span v-for="segment in intentSegments" :key="segment.label">
-                      <i :style="{ background: segment.color }"></i>{{ segment.label }} <strong>{{ segment.count }}</strong>
-                    </span>
+                  <div class="donut-legend hoverable-legend">
+                    <button
+                      v-for="segment in intentSegments"
+                      :key="segment.label"
+                      class="donut-legend-row"
+                      type="button"
+                      @mouseenter="hoveredIntentSegment = segment"
+                      @mouseleave="hoveredIntentSegment = null"
+                      @focus="hoveredIntentSegment = segment"
+                      @blur="hoveredIntentSegment = null"
+                    >
+                      <i :style="{ background: segment.color }"></i>
+                      <span>{{ segment.label }}</span>
+                      <strong>{{ segment.count }}</strong>
+                    </button>
                   </div>
+                </div>
+                <div v-if="hoveredIntentSegment" class="analytics-hover-card">
+                  <strong>{{ hoveredIntentSegment.label }}</strong>
+                  <span>{{ hoveredIntentSegment.count }} events · {{ hoveredIntentSegment.percent }}%</span>
                 </div>
               </section>
 
               <section class="analytics-panel interest-panel">
                 <div class="panel-heading">
                   <h3>Top interest</h3>
-                  <span>{{ loadingAnalytics ? 'Loading...' : `${topInterestCount} actions` }}</span>
+                  <span>{{ loadingAnalytics ? 'Loading...' : `${topProductSegments.length} products` }}</span>
                 </div>
                 <div v-if="topProductSegments.length === 0" class="mini-empty">Product interest will appear after customers open product pages.</div>
-                <div v-else class="top-interest-donut-layout">
-                  <div class="top-interest-donut" :style="topProductDonutStyle" aria-label="Top product interest donut chart">
-                    <div>
-                      <strong>{{ topInterestCount }}</strong>
-                      <span>Total</span>
+                <template v-else>
+                  <div class="donut-layout top-interest-layout">
+                    <div class="donut-chart top-interest-donut" :style="topProductDonutStyle" aria-label="Top product interest breakdown">
+                      <div>
+                        <strong>{{ topProductTotal }}</strong>
+                        <span>Actions</span>
+                      </div>
+                    </div>
+                    <div class="donut-legend hoverable-legend top-interest-legend">
+                      <button
+                        v-for="segment in topProductSegments"
+                        :key="segment.name"
+                        class="donut-legend-row top-product-row"
+                        type="button"
+                        @mouseenter="hoveredTopProductSegment = segment"
+                        @mouseleave="hoveredTopProductSegment = null"
+                        @focus="hoveredTopProductSegment = segment"
+                        @blur="hoveredTopProductSegment = null"
+                      >
+                        <i :style="{ background: segment.color }"></i>
+                        <span>{{ segment.name }}</span>
+                        <strong>{{ segment.total }}</strong>
+                      </button>
                     </div>
                   </div>
-                  <div class="top-interest-legend">
-                    <span
-                      v-for="segment in topProductSegments"
-                      :key="segment.label"
-                      :title="`${segment.label}: ${segment.count} total interest actions`"
-                    >
-                      <i :style="{ background: segment.color }"></i>
-                      <em>{{ segment.label }}</em>
-                      <strong>{{ segment.count }}</strong>
-                    </span>
+                  <div v-if="hoveredTopProductSegment" class="analytics-hover-card">
+                    <strong>{{ hoveredTopProductSegment.name }}</strong>
+                    <span>{{ hoveredTopProductSegment.total }} actions · {{ hoveredTopProductSegment.percent }}%</span>
+                    <small>{{ hoveredTopProductSegment.views }} views · {{ hoveredTopProductSegment.clicks }} WhatsApp clicks</small>
                   </div>
+                </template>
+
+                <div class="whatsapp-enquiries">
+                  <div class="whatsapp-enquiries-head">
+                    <h4>WhatsApp enquiries</h4>
+                    <span>Latest clicks</span>
+                  </div>
+                  <div v-if="recentWhatsappEnquiries.length === 0" class="mini-empty compact">WhatsApp enquiries will appear here after customers tap the order button.</div>
+                  <div v-else class="whatsapp-enquiry-list">
+                    <div v-for="event in recentWhatsappEnquiries" :key="event.id || `${event.productName}-${event.created_at}`" class="whatsapp-enquiry-row">
+                      <div>
+                        <strong>{{ event.productName }}</strong>
+                        <span>{{ event.label }}</span>
+                      </div>
+                      <time>{{ event.timeLabel }}</time>
+                    </div>
+                  </div>
+                  <p class="analytics-note">These are button clicks. Final sent message is confirmed inside WhatsApp.</p>
                 </div>
               </section>
             </div>
@@ -673,6 +720,9 @@ const saving = ref(false)
 const formError = ref('')
 const deleteTarget = ref(null)
 const toast = ref(null)
+const hoveredIntentSegment = ref(null)
+const hoveredTopProductSegment = ref(null)
+const hoveredTrendDay = ref(null)
 const maxVideoUploadBytes = 50 * 1024 * 1024
 const videoUploadLimitLabel = formatFileSize(maxVideoUploadBytes)
 
@@ -759,66 +809,84 @@ const conversionRate = computed(() => {
   return Math.round((whatsappClickCount.value / productViewCount.value) * 100)
 })
 
-const intentSegments = computed(() => [
-  { label: 'Page', count: pageViewCount.value, color: '#d7c6b4' },
-  { label: 'Product', count: productViewCount.value, color: '#a85f33' },
-  { label: 'WhatsApp', count: whatsappClickCount.value, color: '#1f9d57' },
-  { label: 'Gallery', count: galleryInterestCount.value, color: '#7b6fb0' }
-])
+const intentSegments = computed(() => {
+  const segments = [
+    { label: 'Page', count: pageViewCount.value, color: '#d7c6b4' },
+    { label: 'Product', count: productViewCount.value, color: '#a85f33' },
+    { label: 'WhatsApp', count: whatsappClickCount.value, color: '#1f9d57' },
+    { label: 'Gallery', count: galleryInterestCount.value, color: '#7b6fb0' }
+  ]
+  const total = Math.max(1, segments.reduce((sum, segment) => sum + segment.count, 0))
+  return segments.map((segment) => ({
+    ...segment,
+    percent: Math.round((segment.count / total) * 100)
+  }))
+})
 
 const intentDonutStyle = computed(() => ({ background: donutGradient(intentSegments.value) }))
 
-const topProducts = computed(() => {
+const productInterestGroups = computed(() => {
   const grouped = new Map()
   filteredAnalytics.value
-    .filter((event) => event.product_name || event.product_id)
+    .filter((event) => event.product_name || event.product_id || event.metadata?.title)
     .forEach((event) => {
       const name = cleanAnalyticsName(event.product_name || event.metadata?.title || 'Unnamed product')
       if (name === 'Unnamed product') return
       const current = grouped.get(name) || { name, views: 0, clicks: 0, total: 0 }
       if (event.event_type === 'product_view') current.views += 1
-      if (event.event_type === 'whatsapp_click') current.clicks += 1
+      if (event.event_type === 'whatsapp_click' || event.event_type === 'custom_order_click') current.clicks += 1
       current.total += 1
       grouped.set(name, current)
     })
 
-  const list = Array.from(grouped.values()).sort((a, b) => b.total - a.total).slice(0, 4)
+  return Array.from(grouped.values()).sort((a, b) => b.total - a.total)
+})
+
+const topProducts = computed(() => {
+  const list = productInterestGroups.value.slice(0, 4)
   const max = Math.max(1, ...list.map((item) => item.total))
   return list.map((item) => ({ ...item, percent: Math.max(8, Math.round((item.total / max) * 100)) }))
 })
 
-const productInterestItems = computed(() => {
-  const grouped = new Map()
-  filteredAnalytics.value
-    .filter((event) => event.product_name || event.product_id)
-    .forEach((event) => {
-      const name = cleanAnalyticsName(event.product_name || event.metadata?.title || 'Unnamed product')
-      if (name === 'Unnamed product') return
-      const current = grouped.get(name) || { label: name, views: 0, clicks: 0, count: 0 }
-      if (event.event_type === 'product_view') current.views += 1
-      if (event.event_type === 'whatsapp_click') current.clicks += 1
-      current.count += 1
-      grouped.set(name, current)
-    })
-
-  return Array.from(grouped.values()).sort((a, b) => b.count - a.count)
-})
+const topProductTotal = computed(() => topProductSegments.value.reduce((sum, segment) => sum + segment.total, 0))
 
 const topProductSegments = computed(() => {
-  const colors = ['#a85f33', '#1f9d57', '#7b6fb0', '#d39a1f', '#d7c6b4']
-  const items = productInterestItems.value
-  const top = items.slice(0, 4).map((item, index) => ({ ...item, color: colors[index] }))
-  const otherCount = items.slice(4).reduce((sum, item) => sum + item.count, 0)
+  const palette = ['#a66a3f', '#4f9c61', '#7b6fb0', '#d0a33b', '#d7c6b4']
+  const top = productInterestGroups.value.slice(0, 4)
+  const other = productInterestGroups.value.slice(4).reduce(
+    (acc, item) => ({
+      name: 'Other',
+      views: acc.views + item.views,
+      clicks: acc.clicks + item.clicks,
+      total: acc.total + item.total
+    }),
+    { name: 'Other', views: 0, clicks: 0, total: 0 }
+  )
+  const segments = other.total > 0 ? [...top, other] : top
+  const total = Math.max(1, segments.reduce((sum, segment) => sum + segment.total, 0))
 
-  if (otherCount > 0) {
-    top.push({ label: 'Other', count: otherCount, views: 0, clicks: 0, color: colors[4] })
-  }
-
-  return top
+  return segments.map((segment, index) => ({
+    ...segment,
+    color: palette[index % palette.length],
+    percent: Math.round((segment.total / total) * 100)
+  }))
 })
 
-const topInterestCount = computed(() => topProductSegments.value.reduce((sum, segment) => sum + segment.count, 0))
-const topProductDonutStyle = computed(() => ({ background: donutGradient(topProductSegments.value) }))
+const topProductDonutStyle = computed(() => ({ background: donutGradient(topProductSegments.value.map((segment) => ({ ...segment, count: segment.total, label: segment.name }))) }))
+
+const recentWhatsappEnquiries = computed(() => {
+  return filteredAnalytics.value
+    .filter((event) => event.event_type === 'whatsapp_click' || event.event_type === 'custom_order_click')
+    .slice()
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+    .slice(0, 5)
+    .map((event) => ({
+      ...event,
+      productName: cleanAnalyticsName(event.product_name || event.metadata?.title || 'Unknown product'),
+      label: event.event_type === 'custom_order_click' ? 'Custom order' : 'WhatsApp order',
+      timeLabel: formatAnalyticsTime(event.created_at)
+    }))
+})
 
 const dailyTrend = computed(() => {
   const daysToShow = 14
@@ -846,24 +914,39 @@ const dailyTrend = computed(() => {
     ...day,
     pagePercent: day.page ? Math.max(8, Math.round((day.page / max) * 100)) : 0,
     productPercent: day.product ? Math.max(8, Math.round((day.product / max) * 100)) : 0,
-    whatsappPercent: day.whatsapp ? Math.max(8, Math.round((day.whatsapp / max) * 100)) : 0
+    whatsappPercent: day.whatsapp ? Math.max(8, Math.round((day.whatsapp / max) * 100)) : 0,
+    totalPercent: day.total ? Math.max(8, Math.round((day.total / max) * 100)) : 4
   }))
 })
+
 
 const totalCustomerActivity = computed(() => dailyTrend.value.reduce((sum, day) => sum + day.total, 0))
-const todayCustomerActivity = computed(() => dailyTrend.value.at(-1)?.total || 0)
+
 const bestCustomerDay = computed(() => {
-  return dailyTrend.value.reduce((best, day) => (day.total > best.total ? day : best), dailyTrend.value[0] || { label: 'Today', total: 0 })
-})
-const trendBarItems = computed(() => {
-  const max = Math.max(1, ...dailyTrend.value.map((day) => day.total))
-  return dailyTrend.value.map((day, index) => ({
-    ...day,
-    shortLabel: index % 3 === 0 || index === dailyTrend.value.length - 1 ? day.label : '',
-    height: day.total ? Math.max(10, Math.round((day.total / max) * 100)) : 3
-  }))
+  return dailyTrend.value.reduce((best, day) => (day.total > best.total ? day : best), { label: 'None', total: 0 })
 })
 
+const todayCustomerActivity = computed(() => dailyTrend.value.at(-1)?.total || 0)
+
+const trendLineChart = computed(() => {
+  const max = Math.max(1, ...dailyTrend.value.map((day) => day.total))
+  const lastIndex = Math.max(1, dailyTrend.value.length - 1)
+  const yFor = (value) => 92 - (value / max) * 78
+  const points = dailyTrend.value.map((day, index) => {
+    const x = (index / lastIndex) * 100
+    return {
+      label: day.label,
+      x,
+      total: day.total,
+      totalY: yFor(day.total)
+    }
+  })
+
+  return {
+    points,
+    totalPoints: points.map((point) => `${point.x},${point.totalY}`).join(' ')
+  }
+})
 
 const filteredProducts = computed(() => {
   const query = productSearch.value.toLowerCase()
@@ -1402,6 +1485,16 @@ function cleanAnalyticsName(value) {
   const text = String(value || '').trim()
   if (!text || text.toLowerCase() === 'undefined' || text.toLowerCase() === 'null') return 'Unnamed product'
   return text
+}
+
+function formatAnalyticsTime(value) {
+  if (!value) return ''
+  return new Date(value).toLocaleString('en-IN', {
+    day: '2-digit',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
 }
 
 onMounted(async () => {
@@ -3016,6 +3109,283 @@ onMounted(async () => {
 }
 
 /* ============ responsive ============ */
+/* ============ improved analytics interactions ============ */
+.customer-trend-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.customer-trend-summary div {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 11px 12px;
+  background: var(--card);
+}
+
+.customer-trend-summary span,
+.customer-trend-summary small {
+  display: block;
+  color: var(--ink-soft);
+  font-size: 11px;
+  font-weight: 850;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.customer-trend-summary strong {
+  display: block;
+  overflow: hidden;
+  margin-top: 4px;
+  color: var(--ink);
+  font-size: 20px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.customer-trend-bars {
+  display: grid;
+  grid-template-columns: repeat(14, minmax(0, 1fr));
+  gap: 8px;
+  min-height: 210px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 16px 12px 10px;
+  background:
+    linear-gradient(180deg, rgba(234, 223, 210, 0.42) 1px, transparent 1px) 0 16px / 100% 25%,
+    linear-gradient(180deg, var(--card-soft), #fff8ef);
+}
+
+.customer-trend-day {
+  position: relative;
+  display: grid;
+  grid-template-rows: 1fr auto;
+  gap: 8px;
+  min-width: 0;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: help;
+}
+
+.customer-trend-bar-wrap {
+  display: flex;
+  align-items: end;
+  justify-content: center;
+  height: 150px;
+}
+
+.customer-trend-bar {
+  width: min(100%, 18px);
+  min-height: 6px;
+  border-radius: 999px 999px 5px 5px;
+  background: linear-gradient(180deg, var(--accent), #d0a33b);
+  box-shadow: 0 9px 20px rgba(65, 42, 24, 0.12);
+  transition: transform 160ms ease, filter 160ms ease;
+}
+
+.customer-trend-day:hover .customer-trend-bar,
+.customer-trend-day:focus-visible .customer-trend-bar {
+  filter: brightness(1.04);
+  transform: translateY(-3px);
+}
+
+.customer-trend-label {
+  overflow: hidden;
+  color: var(--ink-soft);
+  font-size: 10px;
+  font-weight: 850;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.analytics-tooltip {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 10px);
+  z-index: 5;
+  display: none;
+  width: 210px;
+  transform: translateX(-50%);
+  border: 1px solid #d8c8b8;
+  border-radius: 14px;
+  padding: 10px 12px;
+  background: #ffffff;
+  box-shadow: 0 16px 36px rgba(65, 42, 24, 0.16);
+  color: var(--ink);
+  text-align: left;
+}
+
+.analytics-tooltip strong,
+.analytics-tooltip small {
+  display: block;
+}
+
+.analytics-tooltip small {
+  margin-top: 3px;
+  color: var(--ink-soft);
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.customer-trend-day:hover .analytics-tooltip,
+.customer-trend-day:focus-visible .analytics-tooltip {
+  display: block;
+}
+
+.analytics-hover-card {
+  margin-top: 12px;
+  border: 1px solid #d8c8b8;
+  border-radius: 14px;
+  padding: 10px 12px;
+  background: #ffffff;
+  box-shadow: 0 12px 28px rgba(65, 42, 24, 0.08);
+}
+
+.analytics-hover-card strong,
+.analytics-hover-card span,
+.analytics-hover-card small {
+  display: block;
+}
+
+.analytics-hover-card strong {
+  color: var(--ink);
+}
+
+.analytics-hover-card span,
+.analytics-hover-card small {
+  margin-top: 3px;
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.donut-legend-row {
+  display: grid;
+  grid-template-columns: 10px minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  width: 100%;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 8px 10px;
+  background: transparent;
+  color: #5f5147;
+  cursor: help;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 850;
+  text-align: left;
+}
+
+.donut-legend-row:hover,
+.donut-legend-row:focus-visible {
+  border-color: var(--line);
+  background: var(--card);
+}
+
+.donut-legend-row i {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.donut-legend-row span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.top-interest-layout {
+  grid-template-columns: 132px minmax(0, 1fr);
+  align-items: center;
+}
+
+.top-interest-donut {
+  width: 132px;
+  height: 132px;
+}
+
+.top-interest-donut > div {
+  width: 76px;
+  height: 76px;
+}
+
+.whatsapp-enquiries {
+  margin-top: 18px;
+  border-top: 1px solid var(--line);
+  padding-top: 14px;
+}
+
+.whatsapp-enquiries-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.whatsapp-enquiries-head h4 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 15px;
+}
+
+.whatsapp-enquiries-head span,
+.analytics-note {
+  color: var(--ink-soft);
+  font-size: 11px;
+  font-weight: 850;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.whatsapp-enquiry-list {
+  display: grid;
+  gap: 8px;
+}
+
+.whatsapp-enquiry-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 10px 12px;
+  background: var(--card);
+}
+
+.whatsapp-enquiry-row strong,
+.whatsapp-enquiry-row span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.whatsapp-enquiry-row strong {
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.whatsapp-enquiry-row span,
+.whatsapp-enquiry-row time {
+  color: var(--ink-soft);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.analytics-note {
+  margin: 10px 0 0;
+  line-height: 1.4;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
 @media (max-width: 980px) {
   .admin-shell {
     grid-template-columns: 1fr;
@@ -3420,273 +3790,66 @@ onMounted(async () => {
     font-size: 12px;
   }
 }
+</style>
 
 
-/* ============ updated customer trend bar chart ============ */
-.panel-subtitle {
-  margin: 4px 0 0;
-  color: var(--ink-soft);
-  font-size: 13px;
-  font-weight: 750;
-}
-
-.trend-heading {
-  align-items: flex-start;
-}
-
-.trend-summary-strip {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
-  margin-bottom: 14px;
-}
-
-.trend-summary-card {
-  border: 1px solid var(--line);
-  border-radius: 16px;
-  padding: 12px 14px;
-  background: rgba(255, 255, 255, 0.72);
-}
-
-.trend-summary-card span {
-  display: block;
-  color: var(--accent-deep);
-  font-size: 10px;
-  font-weight: 950;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.trend-summary-card strong {
-  display: block;
-  margin-top: 5px;
-  color: var(--ink);
-  font-size: 22px;
-  line-height: 1.05;
-}
-
-.trend-summary-card small {
-  display: block;
-  margin-top: 3px;
-  color: var(--ink-soft);
-  font-size: 11px;
-  font-weight: 800;
-}
-
-.customer-trend-bars {
-  display: grid;
-  grid-template-columns: repeat(14, minmax(0, 1fr));
-  align-items: end;
-  gap: 8px;
-  min-height: 210px;
-  border: 1px solid var(--line);
-  border-radius: 18px;
-  padding: 18px 14px 10px;
-  background:
-    linear-gradient(180deg, rgba(234, 223, 210, 0.34) 1px, transparent 1px) 0 18px / 100% 25%,
-    linear-gradient(180deg, var(--card-soft), #fff8ef);
-}
-
-.customer-trend-day {
-  position: relative;
-  display: grid;
-  grid-template-rows: 1fr 18px;
-  align-items: end;
-  gap: 8px;
-  min-width: 0;
-  height: 100%;
-}
-
-.customer-trend-bar-wrap {
-  position: relative;
-  display: flex;
-  align-items: end;
-  justify-content: center;
-  height: 156px;
-}
-
-.customer-trend-bar {
-  display: block;
-  width: min(100%, 22px);
-  min-height: 4px;
-  border-radius: 999px 999px 6px 6px;
-  background: linear-gradient(180deg, var(--accent), #d79b63);
-  box-shadow: 0 8px 18px rgba(168, 95, 51, 0.18);
-  transition: transform 160ms ease, filter 160ms ease, box-shadow 160ms ease;
-}
-
-.customer-trend-day.empty .customer-trend-bar {
-  background: #eadfd2;
-  box-shadow: none;
-}
-
-.customer-trend-day:hover .customer-trend-bar,
-.customer-trend-day:focus-within .customer-trend-bar {
-  filter: brightness(0.98);
-  transform: translateY(-3px);
-  box-shadow: 0 12px 24px rgba(168, 95, 51, 0.25);
-}
-
-.customer-trend-day::after {
-  content: attr(data-tooltip);
-  position: absolute;
-  left: 50%;
-  bottom: calc(100% + 10px);
-  z-index: 3;
-  width: max-content;
-  max-width: 240px;
-  padding: 9px 11px;
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  background: var(--ink);
-  color: #ffffff;
-  font-size: 11px;
-  font-weight: 850;
-  line-height: 1.35;
-  opacity: 0;
-  pointer-events: none;
-  transform: translate(-50%, 6px);
-  transition: opacity 140ms ease, transform 140ms ease;
-  white-space: normal;
-}
-
-.customer-trend-day:hover::after,
-.customer-trend-day:focus-within::after {
-  opacity: 1;
-  transform: translate(-50%, 0);
-}
-
-.customer-trend-day small {
-  overflow: hidden;
-  color: var(--ink-soft);
-  font-size: 10px;
-  font-weight: 850;
-  text-align: center;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.trend-note {
-  margin-top: 10px;
-}
-
-/* ============ updated top interest donut ============ */
-.top-interest-donut-layout {
-  display: grid;
-  grid-template-columns: 160px minmax(0, 1fr);
-  align-items: center;
-  gap: 18px;
-}
-
-.top-interest-donut {
-  display: grid;
-  place-items: center;
-  width: 154px;
-  height: 154px;
-  border-radius: 50%;
-  box-shadow: inset 0 0 0 1px rgba(65, 42, 24, 0.08), 0 18px 34px rgba(65, 42, 24, 0.08);
-}
-
-.top-interest-donut > div {
-  display: grid;
-  place-items: center;
-  width: 92px;
-  height: 92px;
-  border-radius: 50%;
-  background: var(--card-soft);
-  text-align: center;
-}
-
-.top-interest-donut strong {
-  color: var(--ink);
-  font-size: 26px;
-  line-height: 1;
-}
-
-.top-interest-donut span {
-  margin-top: 4px;
-  color: var(--ink-soft);
-  font-size: 11px;
-  font-weight: 950;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.top-interest-legend {
-  display: grid;
-  gap: 10px;
-  min-width: 0;
-}
-
-.top-interest-legend span {
-  display: grid;
-  grid-template-columns: 12px minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 9px;
-  min-width: 0;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  padding: 9px 10px;
-  background: rgba(255, 255, 255, 0.68);
-}
-
-.top-interest-legend i {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-}
-
-.top-interest-legend em {
-  overflow: hidden;
-  color: var(--ink);
-  font-style: normal;
-  font-size: 13px;
-  font-weight: 850;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.top-interest-legend strong {
-  display: grid;
-  place-items: center;
-  min-width: 30px;
-  height: 30px;
-  border-radius: 999px;
-  background: var(--accent-tint);
-  color: var(--accent-deep);
-  font-size: 13px;
-}
-
-@media (max-width: 720px) {
-  .trend-summary-strip {
+@media (max-width: 560px) {
+  .customer-trend-summary {
     grid-template-columns: 1fr;
   }
 
   .customer-trend-bars {
     gap: 5px;
-    min-height: 178px;
-    padding: 14px 10px 8px;
+    min-height: 170px;
+    padding-inline: 8px;
   }
 
   .customer-trend-bar-wrap {
-    height: 122px;
+    height: 112px;
   }
 
-  .customer-trend-bar {
-    width: min(100%, 16px);
+  .customer-trend-label:nth-of-type(n) {
+    font-size: 9px;
   }
 
-  .customer-trend-day::after {
-    display: none;
+  .customer-trend-day:nth-child(even) .customer-trend-label {
+    opacity: 0;
   }
 
-  .top-interest-donut-layout {
+  .top-interest-layout,
+  .hoverable-donut-layout {
     grid-template-columns: 1fr;
     justify-items: center;
   }
 
-  .top-interest-legend {
+  .top-interest-legend,
+  .hoverable-legend {
     width: 100%;
   }
+
+  .products-admin-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 12px;
+  }
+
+  .product-admin-img-wrap {
+    min-height: 0;
+    aspect-ratio: 1 / 1;
+  }
+
+  .product-card-price {
+    font-size: 16px;
+  }
+
+  .product-badges .badge {
+    font-size: 9px;
+    padding: 4px 7px;
+  }
+
+  .product-admin-actions .admin-btn {
+    min-height: 36px;
+    padding: 7px 8px;
+    font-size: 11px;
+    white-space: normal;
+  }
 }
-</style>
