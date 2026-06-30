@@ -166,21 +166,13 @@
                 <h3>Customer trend</h3>
                 <span>Last 14 days</span>
               </div>
-              <div class="trend-line-chart" aria-label="Daily activity line chart">
+              <div class="trend-line-chart simple" aria-label="Daily customer activity trend chart">
                 <svg viewBox="0 0 100 100" preserveAspectRatio="none" role="img">
                   <line v-for="line in 4" :key="line" x1="0" x2="100" :y1="line * 20" :y2="line * 20" class="trend-grid-line" />
-                  <polyline class="trend-line page" :points="trendLineChart.pagePoints" />
-                  <polyline class="trend-line product" :points="trendLineChart.productPoints" />
-                  <polyline class="trend-line whatsapp" :points="trendLineChart.whatsappPoints" />
+                  <polyline class="trend-line total" :points="trendLineChart.totalPoints" />
                   <g v-for="point in trendLineChart.points" :key="point.label">
-                    <circle class="trend-dot page" :cx="point.x" :cy="point.pageY" r="1.7">
-                      <title>{{ point.label }}: {{ point.page }} page views</title>
-                    </circle>
-                    <circle class="trend-dot product" :cx="point.x" :cy="point.productY" r="1.7">
-                      <title>{{ point.label }}: {{ point.product }} item views</title>
-                    </circle>
-                    <circle class="trend-dot whatsapp" :cx="point.x" :cy="point.whatsappY" r="1.7">
-                      <title>{{ point.label }}: {{ point.whatsapp }} WhatsApp clicks</title>
+                    <circle class="trend-dot total" :cx="point.x" :cy="point.totalY" r="1.9">
+                      <title>{{ point.label }}: {{ point.total }} total customer actions</title>
                     </circle>
                   </g>
                 </svg>
@@ -188,10 +180,8 @@
                   <span v-for="day in dailyTrend" :key="day.label">{{ day.label }}</span>
                 </div>
               </div>
-              <div class="chart-legend">
-                <span><i class="legend-dot page"></i>Page views</span>
-                <span><i class="legend-dot product"></i>Product views</span>
-                <span><i class="legend-dot whatsapp"></i>WhatsApp clicks</span>
+              <div class="chart-legend simple">
+                <span><i class="legend-dot total"></i>Total customer activity</span>
               </div>
             </section>
 
@@ -286,39 +276,38 @@
             <p>Try a different search or filter.</p>
           </div>
 
-          <div v-else class="products-table">
-            <div class="products-table-head">
-              <span>Product</span>
-              <span>Price</span>
-              <span>Status</span>
-              <span>Actions</span>
-            </div>
-            <div v-for="product in filteredProducts" :key="product.id" class="products-row">
-              <div class="products-row-info">
-                <div class="products-row-img-wrap">
-                  <img v-if="mainProductImage(product)" :src="mainProductImage(product)" :alt="product.name" class="products-row-img" />
-                  <span v-else class="products-row-img-placeholder">No photo</span>
+          <div v-else class="gallery-admin-grid products-admin-grid">
+            <article v-for="product in filteredProducts" :key="product.id" class="gallery-admin-card product-admin-card" :class="{ sold: !product.is_available, missing: !mainProductImage(product) }">
+              <div class="gallery-admin-img-wrap product-admin-img-wrap">
+                <img v-if="mainProductImage(product)" :src="mainProductImage(product)" :alt="product.name" class="gallery-admin-img" />
+                <div v-else class="product-missing-image">
+                  <span class="product-missing-icon">✦</span>
+                  <strong>No photo yet</strong>
+                  <small>Add a product image to improve customer interest.</small>
                 </div>
-                <div>
-                  <p class="products-row-name">{{ product.name }}</p>
-                  <p class="products-row-cat">{{ product.category || 'Uncategorized' }}</p>
+                <div v-if="!product.is_available" class="gallery-hidden-label product-status-label">Sold Out</div>
+              </div>
+              <div class="gallery-admin-body product-admin-body">
+                <p class="gallery-admin-cat">{{ product.category || 'Uncategorized' }}</p>
+                <p class="gallery-admin-name">{{ product.name }}</p>
+                <div class="product-card-meta">
+                  <strong class="product-card-price">Rs {{ Number(product.price).toFixed(2) }}</strong>
+                  <div class="product-badges">
+                    <span :class="product.is_available ? 'badge available' : 'badge sold'">
+                      {{ product.is_available ? 'Available' : 'Sold Out' }}
+                    </span>
+                    <span v-if="product.is_featured" class="badge featured">Featured</span>
+                  </div>
                 </div>
               </div>
-              <div class="products-row-price">Rs {{ Number(product.price).toFixed(2) }}</div>
-              <div class="products-row-status">
-                <span :class="product.is_available ? 'badge available' : 'badge sold'">
-                  {{ product.is_available ? 'Available' : 'Sold Out' }}
-                </span>
-                <span v-if="product.is_featured" class="badge featured">Featured</span>
-              </div>
-              <div class="products-row-actions">
+              <div class="gallery-admin-actions product-admin-actions">
                 <button class="admin-btn outline small" type="button" @click="openProductForm(product)">Edit</button>
                 <button class="admin-btn warning small" type="button" @click="toggleAvailable(product)">
                   {{ product.is_available ? 'Mark Sold Out' : 'Mark Available' }}
                 </button>
                 <button class="admin-btn danger small" type="button" @click="confirmDelete(product)">Delete</button>
               </div>
-            </div>
+            </article>
           </div>
         </section>
 
@@ -452,20 +441,6 @@
               </div>
             </div>
 
-            <aside class="settings-preview">
-              <p class="preview-label">Live preview</p>
-              <div class="preview-card">
-                <img v-if="siteForm.owner_photo_url" :src="siteForm.owner_photo_url" alt="" class="preview-photo" />
-                <div v-else class="preview-photo placeholder">Photo</div>
-                <h4>{{ siteForm.about_heading || 'About heading goes here' }}</h4>
-                <p>{{ siteForm.about_intro || 'A short intro will appear here once you add one.' }}</p>
-                <div class="preview-contact">
-                  <span>{{ siteForm.owner_name || 'Owner name' }}</span>
-                  <span>{{ siteForm.owner_phone || 'Phone number' }}</span>
-                </div>
-              </div>
-              <p class="preview-note">This is how the About Us page will look to customers.</p>
-            </aside>
           </div>
         </section>
       </main>
@@ -818,7 +793,7 @@ const dailyTrend = computed(() => {
 })
 
 const trendLineChart = computed(() => {
-  const max = Math.max(1, ...dailyTrend.value.flatMap((day) => [day.page, day.product, day.whatsapp]))
+  const max = Math.max(1, ...dailyTrend.value.map((day) => day.total))
   const lastIndex = Math.max(1, dailyTrend.value.length - 1)
   const yFor = (value) => 92 - (value / max) * 78
   const points = dailyTrend.value.map((day, index) => {
@@ -826,21 +801,14 @@ const trendLineChart = computed(() => {
     return {
       label: day.label,
       x,
-      page: day.page,
-      product: day.product,
-      whatsapp: day.whatsapp,
-      pageY: yFor(day.page),
-      productY: yFor(day.product),
-      whatsappY: yFor(day.whatsapp)
+      total: day.total,
+      totalY: yFor(day.total)
     }
   })
 
-  const toPoints = (key) => points.map((point) => `${point.x},${point[key]}`).join(' ')
   return {
     points,
-    pagePoints: toPoints('pageY'),
-    productPoints: toPoints('productY'),
-    whatsappPoints: toPoints('whatsappY')
+    totalPoints: points.map((point) => `${point.x},${point.totalY}`).join(' ')
   }
 })
 
@@ -2021,6 +1989,22 @@ onMounted(async () => {
   fill: var(--good);
 }
 
+.trend-line.total,
+.trend-dot.total,
+.legend-dot.total {
+  stroke: var(--accent);
+  fill: var(--accent);
+  background: var(--accent);
+}
+
+.trend-line-chart.simple svg {
+  height: 158px;
+}
+
+.chart-legend.simple {
+  justify-content: flex-start;
+}
+
 .trend-dot {
   cursor: help;
   vector-effect: non-scaling-stroke;
@@ -2466,6 +2450,91 @@ onMounted(async () => {
   color: var(--accent-deep);
 }
 
+/* ============ product/gallery card shared UI ============ */
+.products-admin-grid {
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+}
+
+.product-admin-card.sold {
+  opacity: 0.82;
+}
+
+.product-admin-img-wrap {
+  min-height: 220px;
+}
+
+.product-missing-image {
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 6px;
+  width: 100%;
+  height: 100%;
+  padding: 22px;
+  color: var(--accent-deep);
+  text-align: center;
+  background:
+    radial-gradient(circle at 30% 22%, rgba(255, 255, 255, 0.9), transparent 34%),
+    linear-gradient(135deg, #fff7eb, var(--accent-tint));
+}
+
+.product-missing-icon {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.78);
+  box-shadow: 0 10px 24px rgba(65, 42, 24, 0.08);
+  font-size: 22px;
+}
+
+.product-missing-image strong {
+  font-size: 14px;
+  font-weight: 950;
+}
+
+.product-missing-image small {
+  max-width: 180px;
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 750;
+  line-height: 1.35;
+}
+
+.product-admin-body {
+  display: grid;
+  gap: 8px;
+}
+
+.product-card-meta {
+  display: grid;
+  gap: 10px;
+  margin-top: 2px;
+}
+
+.product-card-price {
+  color: var(--accent-deep);
+  font-size: 20px;
+  line-height: 1;
+}
+
+.product-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  align-items: center;
+}
+
+.product-status-label {
+  background: rgba(163, 59, 47, 0.88);
+}
+
+.product-admin-actions .admin-btn {
+  flex: 1 1 auto;
+  white-space: nowrap;
+}
+
 /* ============ gallery grid ============ */
 .gallery-admin-grid {
   display: grid;
@@ -2538,7 +2607,7 @@ onMounted(async () => {
 /* ============ settings ============ */
 .settings-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1.5fr) minmax(260px, 0.9fr);
+  grid-template-columns: minmax(0, 1fr);
   gap: 18px;
   align-items: start;
 }
@@ -3053,9 +3122,6 @@ onMounted(async () => {
     grid-template-columns: 1fr;
   }
 
-  .settings-preview {
-    position: static;
-  }
 }
 
 @media (max-width: 560px) {
@@ -3198,6 +3264,10 @@ onMounted(async () => {
   .gallery-admin-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 12px;
+  }
+
+  .products-admin-grid {
+    grid-template-columns: 1fr;
   }
 
   .gallery-admin-card {
