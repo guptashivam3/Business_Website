@@ -166,22 +166,36 @@
                 <h3>Customer trend</h3>
                 <span>Last 14 days</span>
               </div>
-              <div class="trend-line-chart simple" aria-label="Daily customer activity trend chart">
-                <svg viewBox="0 0 100 100" preserveAspectRatio="none" role="img">
-                  <line v-for="line in 4" :key="line" x1="0" x2="100" :y1="line * 20" :y2="line * 20" class="trend-grid-line" />
-                  <polyline class="trend-line total" :points="trendLineChart.totalPoints" />
-                  <g v-for="point in trendLineChart.points" :key="point.label">
-                    <circle class="trend-dot total" :cx="point.x" :cy="point.totalY" r="1.9">
-                      <title>{{ point.label }}: {{ point.total }} total customer actions</title>
-                    </circle>
-                  </g>
-                </svg>
-                <div class="trend-axis">
-                  <span v-for="day in dailyTrend" :key="day.label">{{ day.label }}</span>
+              <div class="customer-trend-summary">
+                <div>
+                  <span>Total activity</span>
+                  <strong>{{ totalCustomerActivity }}</strong>
+                </div>
+                <div>
+                  <span>Best day</span>
+                  <strong>{{ bestCustomerDay.label }}</strong>
+                  <small>{{ bestCustomerDay.total }} actions</small>
+                </div>
+                <div>
+                  <span>Today</span>
+                  <strong>{{ todayCustomerActivity }}</strong>
+                </div>
+              </div>
+              <div class="customer-trend-bars" aria-label="Daily customer activity bar chart">
+                <div
+                  v-for="(day, index) in dailyTrend"
+                  :key="day.key"
+                  class="customer-trend-day"
+                  :title="`${day.label}: ${day.total} customer actions`"
+                >
+                  <div class="customer-trend-bar-track">
+                    <span class="customer-trend-bar" :style="{ height: `${day.totalPercent}%` }"></span>
+                  </div>
+                  <small :class="{ muted: index % 3 !== 0 && index !== dailyTrend.length - 1 }">{{ day.label }}</small>
                 </div>
               </div>
               <div class="chart-legend simple">
-                <span><i class="legend-dot total"></i>Total customer activity</span>
+                <span><i class="legend-dot total"></i>Total customer activity per day</span>
               </div>
             </section>
 
@@ -788,9 +802,22 @@ const dailyTrend = computed(() => {
     ...day,
     pagePercent: day.page ? Math.max(8, Math.round((day.page / max) * 100)) : 0,
     productPercent: day.product ? Math.max(8, Math.round((day.product / max) * 100)) : 0,
-    whatsappPercent: day.whatsapp ? Math.max(8, Math.round((day.whatsapp / max) * 100)) : 0
+    whatsappPercent: day.whatsapp ? Math.max(8, Math.round((day.whatsapp / max) * 100)) : 0,
+    totalPercent: day.total ? Math.max(10, Math.round((day.total / max) * 100)) : 0
   }))
 })
+
+const totalCustomerActivity = computed(() => dailyTrend.value.reduce((sum, day) => sum + day.total, 0))
+
+const bestCustomerDay = computed(() => {
+  return dailyTrend.value.reduce(
+    (best, day) => (day.total > best.total ? day : best),
+    { label: 'No activity', total: 0 }
+  )
+})
+
+const todayCustomerActivity = computed(() => dailyTrend.value[dailyTrend.value.length - 1]?.total || 0)
+
 
 const trendLineChart = computed(() => {
   const max = Math.max(1, ...dailyTrend.value.map((day) => day.total))
@@ -3367,4 +3394,228 @@ onMounted(async () => {
     font-size: 12px;
   }
 }
+
+/* ============ final UI alignment overrides ============ */
+/* Keep Products visually identical to Gallery cards. */
+.products-admin-grid {
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 16px;
+}
+
+.product-admin-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.product-admin-img-wrap {
+  min-height: 0;
+  aspect-ratio: 1 / 1;
+}
+
+.product-admin-body {
+  padding: 12px 14px 8px;
+  gap: 7px;
+}
+
+.product-card-meta {
+  gap: 8px;
+}
+
+.product-card-price {
+  font-size: 18px;
+  font-weight: 950;
+}
+
+.product-badges {
+  gap: 6px;
+}
+
+.badge {
+  align-items: center;
+  min-height: 26px;
+  padding: 6px 10px;
+  line-height: 1;
+}
+
+.product-admin-actions {
+  margin-top: auto;
+}
+
+.product-admin-actions .admin-btn {
+  flex: 1 1 92px;
+  min-height: 36px;
+  padding: 7px 10px;
+  font-size: 12px;
+  white-space: normal;
+}
+
+.product-missing-image {
+  min-height: 100%;
+}
+
+/* Replace the messy multi-line trend with a simple owner-friendly bar chart. */
+.customer-trend-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.customer-trend-summary > div {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.customer-trend-summary span,
+.customer-trend-summary small {
+  display: block;
+  color: var(--ink-soft);
+  font-size: 11px;
+  font-weight: 850;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.customer-trend-summary strong {
+  display: block;
+  margin-top: 4px;
+  color: var(--accent-deep);
+  font-size: 22px;
+  line-height: 1;
+}
+
+.customer-trend-bars {
+  display: grid;
+  grid-template-columns: repeat(14, minmax(0, 1fr));
+  align-items: end;
+  gap: 7px;
+  min-height: 190px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 16px 10px 10px;
+  background:
+    linear-gradient(180deg, rgba(234, 223, 210, 0.42) 1px, transparent 1px) 0 16px / 100% 25%,
+    linear-gradient(180deg, var(--card-soft), #fff8ef);
+}
+
+.customer-trend-day {
+  display: grid;
+  grid-template-rows: 1fr auto;
+  gap: 8px;
+  min-width: 0;
+  height: 100%;
+}
+
+.customer-trend-bar-track {
+  display: flex;
+  align-items: end;
+  justify-content: center;
+  min-height: 140px;
+}
+
+.customer-trend-bar {
+  display: block;
+  width: min(100%, 18px);
+  min-height: 4px;
+  border-radius: 999px 999px 5px 5px;
+  background: linear-gradient(180deg, var(--accent), var(--accent-deep));
+  box-shadow: 0 8px 18px rgba(168, 95, 51, 0.22);
+}
+
+.customer-trend-day small {
+  overflow: hidden;
+  color: var(--ink-soft);
+  font-size: 10px;
+  font-weight: 850;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.customer-trend-day small.muted {
+  opacity: 0.35;
+}
+
+@media (max-width: 560px) {
+  .products-admin-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .product-admin-body {
+    padding: 10px;
+  }
+
+  .product-card-price {
+    font-size: 16px;
+  }
+
+  .badge {
+    min-height: 24px;
+    padding: 5px 8px;
+    font-size: 10px;
+  }
+
+  .product-admin-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 7px;
+    padding: 10px;
+  }
+
+  .product-admin-actions .admin-btn {
+    width: 100%;
+    min-height: 36px;
+    padding: 7px 8px;
+  }
+
+  .product-missing-image {
+    padding: 12px 8px;
+  }
+
+  .product-missing-icon {
+    width: 34px;
+    height: 34px;
+    font-size: 17px;
+  }
+
+  .product-missing-image strong {
+    font-size: 12px;
+  }
+
+  .product-missing-image small {
+    display: none;
+  }
+
+  .customer-trend-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .customer-trend-bars {
+    gap: 4px;
+    min-height: 150px;
+    padding: 12px 8px 8px;
+  }
+
+  .customer-trend-bar-track {
+    min-height: 100px;
+  }
+
+  .customer-trend-bar {
+    width: min(100%, 12px);
+  }
+
+  .customer-trend-day small {
+    font-size: 9px;
+  }
+}
+
+@media (max-width: 360px) {
+  .products-admin-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 </style>
