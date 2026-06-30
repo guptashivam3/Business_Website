@@ -48,6 +48,15 @@
       </div>
     </section>
 
+    <section class="social-section container" v-reveal="{ delay: 70 }">
+      <SocialFollowCard
+        title="Follow Laxmi Creations"
+        text="See new designs, custom orders, festive hampers, and latest handmade updates."
+        :instagram-url="instagramLink"
+        source="shop_social_card"
+      />
+    </section>
+
     <section class="promise-section container" v-reveal="{ delay: 80 }">
       <div class="promise-card primary">
         <p class="section-label">Made personally</p>
@@ -249,6 +258,7 @@
 
 <script setup>
 import { computed, onMounted, onUnmounted, reactive, ref } from 'vue'
+import SocialFollowCard from '../components/SocialFollowCard.vue'
 import { supabase } from '../lib/supabase.js'
 import { makeWhatsAppLink, trackEvent } from '../lib/analytics.js'
 
@@ -641,6 +651,10 @@ async function loadSiteSettings() {
   color: #77695f;
   font-size: 12px;
   font-weight: 800;
+}
+
+.social-section {
+  padding: 26px 0 0;
 }
 
 .featured-slide-enter-active,

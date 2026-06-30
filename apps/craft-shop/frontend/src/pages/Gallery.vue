@@ -21,6 +21,16 @@
       </p>
     </section>
 
+    <section class="gallery-social container" v-reveal="{ delay: 70 }">
+      <SocialFollowCard
+        label="More ideas"
+        title="Like these designs?"
+        text="Follow us for more inspiration, custom work, and fresh handmade pieces."
+        instagram-url="laxmi_creations"
+        source="gallery_social_card"
+      />
+    </section>
+
     <main class="gallery-body container" v-reveal="{ delay: 90 }">
       <div v-if="loading" class="loading-wrap">
         <div class="spinner"></div>
@@ -129,6 +139,7 @@
 
 <script setup>
 import { computed, onMounted, onUnmounted, ref } from 'vue'
+import SocialFollowCard from '../components/SocialFollowCard.vue'
 import { supabase } from '../lib/supabase.js'
 import { makeWhatsAppLink, trackEvent } from '../lib/analytics.js'
 
@@ -329,6 +340,10 @@ async function loadGallery() {
 
 .gallery-hero {
   padding: 46px 0 22px;
+}
+
+.gallery-social {
+  padding: 0 0 26px;
 }
 
 .section-label {
