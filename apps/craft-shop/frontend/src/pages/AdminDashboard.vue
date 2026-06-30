@@ -1,7 +1,11 @@
 <template>
   <div class="admin-page">
+    <!-- ============ TOP BAR ============ -->
     <header class="admin-header">
       <div class="admin-header-inner">
+        <button class="nav-burger" type="button" aria-label="Open menu" @click="mobileNavOpen = true">
+          <span></span><span></span><span></span>
+        </button>
         <div class="admin-brand">
           <span class="admin-brand-icon">LC</span>
           <div>
@@ -16,90 +20,134 @@
       </div>
     </header>
 
-    <main class="admin-body container">
-      <section class="admin-overview" v-reveal>
-        <div class="overview-card">
-          <span>Total Products</span>
-          <strong>{{ products.length }}</strong>
-          <p>{{ availableProducts }} available</p>
-        </div>
-        <div class="overview-card">
-          <span>Featured</span>
-          <strong>{{ featuredProducts }}</strong>
-          <p>Shown in premium sections</p>
-        </div>
-        <div class="overview-card">
-          <span>Sold Out</span>
-          <strong>{{ soldOutProducts }}</strong>
-          <p>Hidden from ordering priority</p>
-        </div>
-        <div class="overview-card">
-          <span>Gallery</span>
-          <strong>{{ visibleGalleryItems }}</strong>
-          <p>{{ hiddenGalleryItems }} hidden</p>
-        </div>
-      </section>
+    <div class="admin-shell">
+      <!-- ============ SIDEBAR (desktop) / DRAWER (mobile) ============ -->
+      <transition name="fade">
+        <div v-if="mobileNavOpen" class="nav-scrim" @click="mobileNavOpen = false"></div>
+      </transition>
 
-      <div class="admin-tabs">
-        <button class="admin-tab" :class="{ active: tab === 'dashboard' }" type="button" @click="tab = 'dashboard'">
-          Dashboard
-        </button>
-        <button class="admin-tab" :class="{ active: tab === 'products' }" type="button" @click="tab = 'products'">
-          Products <span class="tab-count">{{ products.length }}</span>
-        </button>
-        <button class="admin-tab" :class="{ active: tab === 'gallery' }" type="button" @click="tab = 'gallery'">
-          Gallery <span class="tab-count">{{ galleryItems.length }}</span>
-        </button>
-        <button class="admin-tab" :class="{ active: tab === 'settings' }" type="button" @click="tab = 'settings'">
-          Site Details
-        </button>
-      </div>
-
-      <section v-if="tab === 'dashboard'" class="tab-content" v-reveal="{ delay: 80 }">
-        <div class="tab-header">
-          <div>
-            <h2 class="tab-title">Dashboard Analytics</h2>
-            <p class="tab-sub">Track visitor interest, product views, and WhatsApp order clicks.</p>
-          </div>
-          <div class="tab-actions">
-            <button class="admin-btn outline small" type="button" @click="loadAnalytics">Refresh</button>
-          </div>
-        </div>
-
-        <div v-if="analyticsError" class="empty-state compact">
-          <div class="empty-state-icon">SQL</div>
-          <h3>Analytics setup needed</h3>
-          <p>{{ analyticsError }}</p>
-        </div>
-
-        <div v-else>
-          <div class="analytics-grid">
-            <div class="analytics-card">
-              <span>Page Views</span>
-              <strong>{{ pageViewCount }}</strong>
-              <p>Total website visits tracked</p>
+      <aside class="admin-sidebar" :class="{ open: mobileNavOpen }">
+        <div class="sidebar-top">
+          <div class="admin-brand drawer-only">
+            <span class="admin-brand-icon">LC</span>
+            <div>
+              <p class="admin-brand-name">{{ shopName }}</p>
+              <p class="admin-brand-role">Admin</p>
             </div>
-            <div class="analytics-card">
+          </div>
+          <button class="nav-close drawer-only" type="button" aria-label="Close menu" @click="mobileNavOpen = false">✕</button>
+        </div>
+
+        <nav class="sidebar-nav">
+          <button
+            v-for="item in navItems"
+            :key="item.key"
+            class="sidebar-link"
+            :class="{ active: tab === item.key }"
+            type="button"
+            @click="selectTab(item.key)"
+          >
+            <span class="sidebar-link-icon">{{ item.icon }}</span>
+            <span class="sidebar-link-label">{{ item.label }}</span>
+            <span v-if="item.count !== undefined" class="sidebar-link-count">{{ item.count }}</span>
+          </button>
+        </nav>
+
+        <div class="sidebar-foot drawer-only">
+          <RouterLink to="/" class="admin-btn outline small" target="_blank">View Shop</RouterLink>
+          <button class="admin-btn ghost small" type="button" @click="logout">Logout</button>
+        </div>
+      </aside>
+
+      <!-- ============ MAIN CONTENT ============ -->
+      <main class="admin-body">
+        <!-- ---------------- DASHBOARD ---------------- -->
+        <section v-if="tab === 'dashboard'" class="tab-content" v-reveal>
+          <div class="tab-header">
+            <div>
+              <h2 class="tab-title">Welcome back</h2>
+              <p class="tab-sub">Here's how customers are interacting with {{ shopName }} right now.</p>
+            </div>
+            <button class="admin-btn outline small" type="button" @click="loadAnalytics">↻ Refresh</button>
+          </div>
+
+          <!-- Quick actions -->
+          <div class="quick-actions">
+            <button class="quick-action" type="button" @click="goAddProduct">
+              <span class="quick-action-icon">+</span>
+              <span>
+                <strong>Add a product</strong>
+                <small>List something new for sale</small>
+              </span>
+            </button>
+            <button class="quick-action" type="button" @click="goAddGallery">
+              <span class="quick-action-icon">🖼</span>
+              <span>
+                <strong>Add gallery photos</strong>
+                <small>Show off finished work</small>
+              </span>
+            </button>
+            <button class="quick-action" type="button" @click="tab = 'settings'">
+              <span class="quick-action-icon">✎</span>
+              <span>
+                <strong>Edit site details</strong>
+                <small>Update contact & About Us</small>
+              </span>
+            </button>
+          </div>
+
+          <!-- Key metrics -->
+          <div class="metric-grid">
+            <div class="metric-card">
+              <span>Products</span>
+              <strong>{{ products.length }}</strong>
+              <p>{{ availableProducts }} available · {{ soldOutProducts }} sold out</p>
+            </div>
+            <div class="metric-card">
+              <span>Gallery</span>
+              <strong>{{ galleryItems.length }}</strong>
+              <p>{{ visibleGalleryItems }} visible · {{ hiddenGalleryItems }} hidden</p>
+            </div>
+            <div class="metric-card">
               <span>Product Views</span>
               <strong>{{ productViewCount }}</strong>
-              <p>Product detail opens</p>
+              <p>{{ pageViewCount }} total site visits</p>
             </div>
-            <div class="analytics-card">
+            <div class="metric-card accent">
               <span>WhatsApp Clicks</span>
               <strong>{{ whatsappClickCount }}</strong>
-              <p>{{ conversionRate }}% of product views</p>
-            </div>
-            <div class="analytics-card">
-              <span>Gallery Interest</span>
-              <strong>{{ galleryInterestCount }}</strong>
-              <p>Gallery views and custom ideas</p>
+              <p>{{ conversionRate }}% of product views convert</p>
             </div>
           </div>
 
-          <div class="analytics-panels pro compact">
-            <section class="analytics-panel chart-panel trend-panel">
+          <!-- Needs attention -->
+          <section v-if="needsAttention.length" class="attention-panel">
+            <div class="panel-heading">
+              <h3>Needs your attention</h3>
+              <span>{{ needsAttention.length }} item{{ needsAttention.length === 1 ? '' : 's' }}</span>
+            </div>
+            <div class="attention-list">
+              <button v-for="item in needsAttention" :key="item.key" class="attention-row" type="button" @click="item.action">
+                <span class="attention-dot" :class="item.severity"></span>
+                <span class="attention-text">
+                  <strong>{{ item.title }}</strong>
+                  <small>{{ item.detail }}</small>
+                </span>
+                <span class="attention-go">View →</span>
+              </button>
+            </div>
+          </section>
+
+          <div v-if="analyticsError" class="empty-state compact">
+            <div class="empty-state-icon">SQL</div>
+            <h3>Analytics setup needed</h3>
+            <p>{{ analyticsError }}</p>
+          </div>
+
+          <template v-else>
+            <section class="analytics-panel chart-panel">
               <div class="panel-heading">
-                <h3>Customer Trend</h3>
+                <h3>Customer trend</h3>
                 <span>Last 14 days</span>
               </div>
               <div class="trend-chart" aria-label="Daily activity chart">
@@ -119,272 +167,290 @@
               </div>
             </section>
 
-            <section class="analytics-panel donut-panel">
-              <div class="panel-heading">
-                <h3>Customer Intent</h3>
-                <span>{{ filteredAnalytics.length }} events</span>
-              </div>
-              <div class="donut-layout">
-                <div class="donut-chart" :style="intentDonutStyle">
-                  <div>
-                    <strong>{{ filteredAnalytics.length }}</strong>
-                    <span>Total</span>
+            <div class="analytics-panels">
+              <section class="analytics-panel donut-panel">
+                <div class="panel-heading">
+                  <h3>Customer intent</h3>
+                  <span>{{ filteredAnalytics.length }} events</span>
+                </div>
+                <div class="donut-layout">
+                  <div class="donut-chart" :style="intentDonutStyle">
+                    <div>
+                      <strong>{{ filteredAnalytics.length }}</strong>
+                      <span>Total</span>
+                    </div>
+                  </div>
+                  <div class="donut-legend">
+                    <span v-for="segment in intentSegments" :key="segment.label">
+                      <i :style="{ background: segment.color }"></i>{{ segment.label }} <strong>{{ segment.count }}</strong>
+                    </span>
                   </div>
                 </div>
-                <div class="donut-legend">
-                  <span v-for="segment in intentSegments" :key="segment.label">
-                    <i :style="{ background: segment.color }"></i>{{ segment.label }} <strong>{{ segment.count }}</strong>
-                  </span>
-                </div>
-              </div>
-            </section>
+              </section>
 
-            <section class="analytics-panel donut-panel">
-              <div class="panel-heading">
-                <h3>Product Status</h3>
-                <span>{{ products.length }} products</span>
-              </div>
-              <div class="donut-layout">
-                <div class="donut-chart status" :style="productStatusDonutStyle">
-                  <div>
-                    <strong>{{ products.length }}</strong>
-                    <span>Total</span>
+              <section class="analytics-panel interest-panel">
+                <div class="panel-heading">
+                  <h3>Top interest</h3>
+                  <span>{{ loadingAnalytics ? 'Loading...' : `${topProducts.length} products` }}</span>
+                </div>
+                <div v-if="topProducts.length === 0" class="mini-empty">Product interest will appear after customers open product pages.</div>
+                <div v-else class="interest-list">
+                  <div v-for="item in topProducts" :key="item.name" class="interest-row">
+                    <div>
+                      <strong>{{ item.name }}</strong>
+                      <span>{{ item.views }} views · {{ item.clicks }} WhatsApp</span>
+                    </div>
+                    <em>{{ item.total }}</em>
                   </div>
                 </div>
-                <div class="donut-legend">
-                  <span v-for="segment in productStatusSegments" :key="segment.label">
-                    <i :style="{ background: segment.color }"></i>{{ segment.label }} <strong>{{ segment.count }}</strong>
-                  </span>
+              </section>
+            </div>
+          </template>
+        </section>
+
+        <!-- ---------------- PRODUCTS ---------------- -->
+        <section v-if="tab === 'products'" class="tab-content" v-reveal="{ delay: 80 }">
+          <div class="tab-header">
+            <div>
+              <h2 class="tab-title">Products</h2>
+              <p class="tab-sub">Add products, upload media, and update availability.</p>
+            </div>
+            <div class="tab-actions">
+              <RouterLink to="/" class="admin-btn outline small" target="_blank">Preview Shop</RouterLink>
+              <button class="admin-btn primary small" type="button" @click="openProductForm(null)">+ Add Product</button>
+            </div>
+          </div>
+
+          <div class="admin-tools">
+            <label class="admin-search">
+              <span>Search Products</span>
+              <input v-model.trim="productSearch" type="search" placeholder="Search by name, category, description..." />
+            </label>
+            <select v-model="productFilter" class="admin-filter">
+              <option value="all">All products</option>
+              <option value="available">Available only</option>
+              <option value="sold">Sold out only</option>
+              <option value="featured">Featured only</option>
+              <option value="missingImage">Missing image</option>
+            </select>
+          </div>
+
+          <div v-if="loadingProducts" class="loading-wrap"><div class="spinner"></div></div>
+
+          <div v-else-if="products.length === 0" class="empty-state">
+            <div class="empty-state-icon">New</div>
+            <h3>No products yet</h3>
+            <p>Add your first product so customers can see and order it.</p>
+            <button class="admin-btn primary" type="button" @click="openProductForm(null)">Add First Product</button>
+          </div>
+
+          <div v-else-if="filteredProducts.length === 0" class="empty-state compact">
+            <div class="empty-state-icon">Find</div>
+            <h3>No matching products</h3>
+            <p>Try a different search or filter.</p>
+          </div>
+
+          <div v-else class="products-table">
+            <div class="products-table-head">
+              <span>Product</span>
+              <span>Price</span>
+              <span>Status</span>
+              <span>Actions</span>
+            </div>
+            <div v-for="product in filteredProducts" :key="product.id" class="products-row">
+              <div class="products-row-info">
+                <div class="products-row-img-wrap">
+                  <img v-if="mainProductImage(product)" :src="mainProductImage(product)" :alt="product.name" class="products-row-img" />
+                  <span v-else class="products-row-img-placeholder">No photo</span>
+                </div>
+                <div>
+                  <p class="products-row-name">{{ product.name }}</p>
+                  <p class="products-row-cat">{{ product.category || 'Uncategorized' }}</p>
                 </div>
               </div>
-            </section>
-
-            <section class="analytics-panel interest-panel">
-              <div class="panel-heading">
-                <h3>Top Interest</h3>
-                <span>{{ loadingAnalytics ? 'Loading...' : `${topProducts.length} products` }}</span>
+              <div class="products-row-price">Rs {{ Number(product.price).toFixed(2) }}</div>
+              <div class="products-row-status">
+                <span :class="product.is_available ? 'badge available' : 'badge sold'">
+                  {{ product.is_available ? 'Available' : 'Sold Out' }}
+                </span>
+                <span v-if="product.is_featured" class="badge featured">Featured</span>
               </div>
-              <div v-if="topProducts.length === 0" class="mini-empty">Product interest will appear after customers open product pages.</div>
-              <div v-else class="interest-list">
-                <div v-for="item in topProducts" :key="item.name" class="interest-row">
-                  <div>
-                    <strong>{{ item.name }}</strong>
-                    <span>{{ item.views }} views / {{ item.clicks }} WhatsApp</span>
+              <div class="products-row-actions">
+                <button class="admin-btn outline small" type="button" @click="openProductForm(product)">Edit</button>
+                <button class="admin-btn warning small" type="button" @click="toggleAvailable(product)">
+                  {{ product.is_available ? 'Mark Sold Out' : 'Mark Available' }}
+                </button>
+                <button class="admin-btn danger small" type="button" @click="confirmDelete(product)">Delete</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ---------------- GALLERY ---------------- -->
+        <section v-if="tab === 'gallery'" class="tab-content" v-reveal="{ delay: 80 }">
+          <div class="tab-header">
+            <div>
+              <h2 class="tab-title">Gallery</h2>
+              <p class="tab-sub">Upload finished work photos in batches for custom order inspiration.</p>
+            </div>
+            <div class="tab-actions">
+              <RouterLink to="/gallery" class="admin-btn outline small" target="_blank">Preview Gallery</RouterLink>
+              <button class="admin-btn primary small" type="button" @click="openGalleryForm(null)">+ Add Photos</button>
+            </div>
+          </div>
+
+          <div class="admin-tools">
+            <label class="admin-search">
+              <span>Search Gallery</span>
+              <input v-model.trim="gallerySearch" type="search" placeholder="Search by title, category, description..." />
+            </label>
+            <select v-model="galleryFilter" class="admin-filter">
+              <option value="all">All gallery items</option>
+              <option value="visible">Visible only</option>
+              <option value="hidden">Hidden only</option>
+            </select>
+          </div>
+
+          <div v-if="loadingGallery" class="loading-wrap"><div class="spinner"></div></div>
+
+          <div v-else-if="galleryItems.length === 0" class="empty-state">
+            <div class="empty-state-icon">Work</div>
+            <h3>Gallery is empty</h3>
+            <p>Add photos of completed work to inspire customers.</p>
+            <button class="admin-btn primary" type="button" @click="openGalleryForm(null)">Add First Item</button>
+          </div>
+
+          <div v-else-if="filteredGalleryItems.length === 0" class="empty-state compact">
+            <div class="empty-state-icon">Find</div>
+            <h3>No matching gallery items</h3>
+            <p>Try a different search or filter.</p>
+          </div>
+
+          <div v-else class="gallery-admin-grid">
+            <article v-for="item in filteredGalleryItems" :key="item.id" class="gallery-admin-card" :class="{ hidden: !item.is_visible }">
+              <div class="gallery-admin-img-wrap">
+                <img :src="item.image_url" :alt="item.title" class="gallery-admin-img" />
+                <div v-if="!item.is_visible" class="gallery-hidden-label">Hidden</div>
+              </div>
+              <div class="gallery-admin-body">
+                <p class="gallery-admin-cat">{{ item.category || 'Gallery' }}</p>
+                <p class="gallery-admin-name">{{ item.title }}</p>
+              </div>
+              <div class="gallery-admin-actions">
+                <button class="admin-btn outline small" type="button" @click="openGalleryForm(item)">Edit</button>
+                <button class="admin-btn outline small" type="button" @click="toggleGalleryVisible(item)">
+                  {{ item.is_visible ? 'Hide' : 'Show' }}
+                </button>
+                <button class="admin-btn danger small" type="button" @click="deleteGalleryItem(item)">Delete</button>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <!-- ---------------- SETTINGS ---------------- -->
+        <section v-if="tab === 'settings'" class="tab-content" v-reveal="{ delay: 80 }">
+          <div class="tab-header">
+            <div>
+              <h2 class="tab-title">Site Details</h2>
+              <p class="tab-sub">Update the About Us page, owner contact details, and profile photo.</p>
+            </div>
+            <RouterLink to="/about" class="admin-btn outline small" target="_blank">Preview About Us</RouterLink>
+          </div>
+
+          <div class="settings-layout">
+            <div class="settings-panel">
+              <div class="form-grid">
+                <div class="field">
+                  <label>Shop Name</label>
+                  <input v-model="siteForm.shop_name" placeholder="Laxmi Creations" />
+                </div>
+                <div class="field">
+                  <label>Owner Name</label>
+                  <input v-model="siteForm.owner_name" placeholder="Laxmi Gupta" />
+                </div>
+                <div class="field">
+                  <label>Phone</label>
+                  <input v-model="siteForm.owner_phone" placeholder="+918793662673" />
+                </div>
+                <div class="field">
+                  <label>Email</label>
+                  <input v-model="siteForm.owner_email" type="email" placeholder="laxmigupta8888@gmail.com" />
+                </div>
+                <div class="field">
+                  <label>Instagram</label>
+                  <input v-model="siteForm.owner_instagram" placeholder="laxmi_creations" />
+                </div>
+                <div class="field full">
+                  <label>About Heading</label>
+                  <input v-model="siteForm.about_heading" placeholder="Handmade gifts crafted by Laxmi Gupta" />
+                </div>
+                <div class="field full">
+                  <label>Intro Text</label>
+                  <textarea v-model="siteForm.about_intro" rows="3" placeholder="Short intro for About Us"></textarea>
+                </div>
+                <div class="field full">
+                  <label>Story Text</label>
+                  <textarea v-model="siteForm.about_story" rows="4" placeholder="Longer story shown on About Us"></textarea>
+                </div>
+                <div class="field full">
+                  <label>Owner Photo</label>
+                  <div class="upload-zone" :class="{ 'has-file': siteForm.owner_photo_url }" @click="triggerUpload('owner')">
+                    <input ref="ownerPhotoInput" type="file" accept="image/*" @change="uploadFile($event, 'owner')" />
+                    <div v-if="siteForm.owner_photo_url" class="upload-preview">
+                      <img :src="siteForm.owner_photo_url" alt="Owner preview" />
+                      <button type="button" class="upload-remove" @click.stop="siteForm.owner_photo_url = ''">Remove</button>
+                    </div>
+                    <div v-else class="upload-placeholder">
+                      <strong>{{ uploadingOwnerPhoto ? 'Uploading...' : 'Click to upload owner photo' }}</strong>
+                      <span>Shown on About Us</span>
+                    </div>
                   </div>
-                  <em>{{ item.total }}</em>
                 </div>
               </div>
-            </section>
-          </div>
-        </div>
-      </section>
 
-      <section v-if="tab === 'products'" class="tab-content" v-reveal="{ delay: 80 }">
-        <div class="tab-header">
-          <div>
-            <h2 class="tab-title">Manage Products</h2>
-            <p class="tab-sub">Add products, upload media, and update availability.</p>
-          </div>
-          <div class="tab-actions">
-            <RouterLink to="/" class="admin-btn outline small" target="_blank">Preview Shop</RouterLink>
-            <button class="admin-btn primary small" type="button" @click="openProductForm(null)">Add Product</button>
-          </div>
-        </div>
-
-        <div class="admin-tools">
-          <label class="admin-search">
-            <span>Search Products</span>
-            <input v-model.trim="productSearch" type="search" placeholder="Search by name, category, description..." />
-          </label>
-          <select v-model="productFilter" class="admin-filter">
-            <option value="all">All products</option>
-            <option value="available">Available only</option>
-            <option value="sold">Sold out only</option>
-            <option value="featured">Featured only</option>
-            <option value="missingImage">Missing image</option>
-          </select>
-        </div>
-
-        <div v-if="loadingProducts" class="loading-wrap"><div class="spinner"></div></div>
-
-        <div v-else-if="products.length === 0" class="empty-state">
-          <div class="empty-state-icon">New</div>
-          <h3>No products yet</h3>
-          <p>Add your first product so customers can see and order it.</p>
-          <button class="admin-btn primary" type="button" @click="openProductForm(null)">Add First Product</button>
-        </div>
-
-        <div v-else-if="filteredProducts.length === 0" class="empty-state compact">
-          <div class="empty-state-icon">Find</div>
-          <h3>No matching products</h3>
-          <p>Try a different search or filter.</p>
-        </div>
-
-        <div v-else class="products-table">
-          <div class="products-table-head">
-            <span>Product</span>
-            <span>Price</span>
-            <span>Status</span>
-            <span>Actions</span>
-          </div>
-          <div v-for="product in filteredProducts" :key="product.id" class="products-row">
-            <div class="products-row-info">
-              <div class="products-row-img-wrap">
-                <img v-if="mainProductImage(product)" :src="mainProductImage(product)" :alt="product.name" class="products-row-img" />
-                <span v-else class="products-row-img-placeholder">Image</span>
-              </div>
-              <div>
-                <p class="products-row-name">{{ product.name }}</p>
-                <p class="products-row-cat">{{ product.category || 'Uncategorized' }}</p>
+              <p v-if="formError" class="form-error">{{ formError }}</p>
+              <div class="settings-actions">
+                <button class="admin-btn primary" type="button" :disabled="saving" @click="saveSiteSettings">
+                  {{ saving ? 'Saving...' : 'Save Site Details' }}
+                </button>
               </div>
             </div>
-            <div class="products-row-price">Rs {{ Number(product.price).toFixed(2) }}</div>
-            <div class="products-row-status">
-              <span :class="product.is_available ? 'badge available' : 'badge sold'">
-                {{ product.is_available ? 'Available' : 'Sold Out' }}
-              </span>
-              <span v-if="product.is_featured" class="badge featured">Featured</span>
-            </div>
-            <div class="products-row-actions">
-              <button class="admin-btn outline small" type="button" @click="openProductForm(product)">Edit</button>
-              <button class="admin-btn warning small" type="button" @click="toggleAvailable(product)">
-                {{ product.is_available ? 'Mark Sold Out' : 'Mark Available' }}
-              </button>
-              <button class="admin-btn danger small" type="button" @click="confirmDelete(product)">Delete</button>
-            </div>
-          </div>
-        </div>
-      </section>
 
-      <section v-if="tab === 'gallery'" class="tab-content" v-reveal="{ delay: 80 }">
-        <div class="tab-header">
-          <div>
-            <h2 class="tab-title">Manage Gallery</h2>
-            <p class="tab-sub">Upload finished work photos in batches for custom order inspiration.</p>
-          </div>
-          <div class="tab-actions">
-            <RouterLink to="/gallery" class="admin-btn outline small" target="_blank">Preview Gallery</RouterLink>
-            <button class="admin-btn primary small" type="button" @click="openGalleryForm(null)">Add Photos</button>
-          </div>
-        </div>
-
-        <div class="admin-tools">
-          <label class="admin-search">
-            <span>Search Gallery</span>
-            <input v-model.trim="gallerySearch" type="search" placeholder="Search by title, category, description..." />
-          </label>
-          <select v-model="galleryFilter" class="admin-filter">
-            <option value="all">All gallery items</option>
-            <option value="visible">Visible only</option>
-            <option value="hidden">Hidden only</option>
-          </select>
-        </div>
-
-        <div v-if="loadingGallery" class="loading-wrap"><div class="spinner"></div></div>
-
-        <div v-else-if="galleryItems.length === 0" class="empty-state">
-          <div class="empty-state-icon">Work</div>
-          <h3>Gallery is empty</h3>
-          <p>Add photos of completed work to inspire customers.</p>
-          <button class="admin-btn primary" type="button" @click="openGalleryForm(null)">Add First Item</button>
-        </div>
-
-        <div v-else-if="filteredGalleryItems.length === 0" class="empty-state compact">
-          <div class="empty-state-icon">Find</div>
-          <h3>No matching gallery items</h3>
-          <p>Try a different search or filter.</p>
-        </div>
-
-        <div v-else class="gallery-admin-grid">
-          <article v-for="item in filteredGalleryItems" :key="item.id" class="gallery-admin-card" :class="{ hidden: !item.is_visible }">
-            <div class="gallery-admin-img-wrap">
-              <img :src="item.image_url" :alt="item.title" class="gallery-admin-img" />
-              <div v-if="!item.is_visible" class="gallery-hidden-label">Hidden</div>
-            </div>
-            <div class="gallery-admin-body">
-              <p class="gallery-admin-cat">{{ item.category || 'Gallery' }}</p>
-              <p class="gallery-admin-name">{{ item.title }}</p>
-            </div>
-            <div class="gallery-admin-actions">
-              <button class="admin-btn outline small" type="button" @click="openGalleryForm(item)">Edit</button>
-              <button class="admin-btn outline small" type="button" @click="toggleGalleryVisible(item)">
-                {{ item.is_visible ? 'Hide' : 'Show' }}
-              </button>
-              <button class="admin-btn danger small" type="button" @click="deleteGalleryItem(item)">Delete</button>
-            </div>
-          </article>
-        </div>
-      </section>
-
-      <section v-if="tab === 'settings'" class="tab-content" v-reveal="{ delay: 80 }">
-        <div class="tab-header">
-          <div>
-            <h2 class="tab-title">Site Details</h2>
-            <p class="tab-sub">Update the About Us page, owner contact details, and profile photo.</p>
-          </div>
-          <RouterLink to="/about" class="admin-btn outline small" target="_blank">Preview About Us</RouterLink>
-        </div>
-
-        <div class="settings-panel">
-          <div class="form-grid">
-            <div class="field">
-              <label>Shop Name</label>
-              <input v-model="siteForm.shop_name" placeholder="Laxmi Creations" />
-            </div>
-            <div class="field">
-              <label>Owner Name</label>
-              <input v-model="siteForm.owner_name" placeholder="Laxmi Gupta" />
-            </div>
-            <div class="field">
-              <label>Phone</label>
-              <input v-model="siteForm.owner_phone" placeholder="+918793662673" />
-            </div>
-            <div class="field">
-              <label>Email</label>
-              <input v-model="siteForm.owner_email" type="email" placeholder="laxmigupta8888@gmail.com" />
-            </div>
-            <div class="field">
-              <label>Instagram</label>
-              <input v-model="siteForm.owner_instagram" placeholder="laxmi_creations" />
-            </div>
-            <div class="field full">
-              <label>About Heading</label>
-              <input v-model="siteForm.about_heading" placeholder="Handmade gifts crafted by Laxmi Gupta" />
-            </div>
-            <div class="field full">
-              <label>Intro Text</label>
-              <textarea v-model="siteForm.about_intro" rows="3" placeholder="Short intro for About Us"></textarea>
-            </div>
-            <div class="field full">
-              <label>Story Text</label>
-              <textarea v-model="siteForm.about_story" rows="4" placeholder="Longer story shown on About Us"></textarea>
-            </div>
-            <div class="field full">
-              <label>Owner Photo</label>
-              <div class="upload-zone" :class="{ 'has-file': siteForm.owner_photo_url }" @click="triggerUpload('owner')">
-                <input ref="ownerPhotoInput" type="file" accept="image/*" @change="uploadFile($event, 'owner')" />
-                <div v-if="siteForm.owner_photo_url" class="upload-preview">
-                  <img :src="siteForm.owner_photo_url" alt="Owner preview" />
-                  <button type="button" class="upload-remove" @click.stop="siteForm.owner_photo_url = ''">Remove</button>
-                </div>
-                <div v-else class="upload-placeholder">
-                  <strong>{{ uploadingOwnerPhoto ? 'Uploading...' : 'Click to upload owner photo' }}</strong>
-                  <span>Shown on About Us</span>
+            <aside class="settings-preview">
+              <p class="preview-label">Live preview</p>
+              <div class="preview-card">
+                <img v-if="siteForm.owner_photo_url" :src="siteForm.owner_photo_url" alt="" class="preview-photo" />
+                <div v-else class="preview-photo placeholder">Photo</div>
+                <h4>{{ siteForm.about_heading || 'About heading goes here' }}</h4>
+                <p>{{ siteForm.about_intro || 'A short intro will appear here once you add one.' }}</p>
+                <div class="preview-contact">
+                  <span>{{ siteForm.owner_name || 'Owner name' }}</span>
+                  <span>{{ siteForm.owner_phone || 'Phone number' }}</span>
                 </div>
               </div>
-            </div>
+              <p class="preview-note">This is how the About Us page will look to customers.</p>
+            </aside>
           </div>
+        </section>
+      </main>
+    </div>
 
-          <p v-if="formError" class="form-error">{{ formError }}</p>
-          <div class="settings-actions">
-            <button class="admin-btn primary" type="button" :disabled="saving" @click="saveSiteSettings">
-              {{ saving ? 'Saving...' : 'Save Site Details' }}
-            </button>
-          </div>
-        </div>
-      </section>
-    </main>
+    <!-- ============ MOBILE BOTTOM NAV ============ -->
+    <nav class="bottom-nav">
+      <button
+        v-for="item in navItems"
+        :key="item.key"
+        class="bottom-nav-link"
+        :class="{ active: tab === item.key }"
+        type="button"
+        @click="selectTab(item.key)"
+      >
+        <span class="bottom-nav-icon">{{ item.icon }}</span>
+        <span>{{ item.label }}</span>
+      </button>
+    </nav>
 
+    <!-- ============ MODALS (unchanged behaviour) ============ -->
     <div v-if="showProductForm" class="modal-overlay" @click.self="closeProductForm">
       <div class="modal">
         <div class="modal-header">
@@ -550,6 +616,7 @@ import { supabase } from '../lib/supabase.js'
 const router = useRouter()
 const shopName = import.meta.env.VITE_SHOP_NAME || 'Laxmi Creations'
 const tab = ref('dashboard')
+const mobileNavOpen = ref(false)
 
 const products = ref([])
 const galleryItems = ref([])
@@ -593,6 +660,70 @@ const soldOutProducts = computed(() => products.value.filter((product) => !produ
 const featuredProducts = computed(() => products.value.filter((product) => product.is_featured).length)
 const visibleGalleryItems = computed(() => galleryItems.value.filter((item) => item.is_visible).length)
 const hiddenGalleryItems = computed(() => galleryItems.value.filter((item) => !item.is_visible).length)
+const missingImageProducts = computed(() => products.value.filter((product) => !mainProductImage(product)).length)
+
+const navItems = computed(() => [
+  { key: 'dashboard', label: 'Dashboard', icon: '◆' },
+  { key: 'products', label: 'Products', icon: '▣', count: products.value.length },
+  { key: 'gallery', label: 'Gallery', icon: '◫', count: galleryItems.value.length },
+  { key: 'settings', label: 'Settings', icon: '⚙' }
+])
+
+const needsAttention = computed(() => {
+  const items = []
+  if (soldOutProducts.value > 0) {
+    items.push({
+      key: 'sold-out',
+      severity: 'warn',
+      title: `${soldOutProducts.value} product${soldOutProducts.value === 1 ? '' : 's'} marked sold out`,
+      detail: 'Restock or remove so customers see what is actually available.',
+      action: () => {
+        tab.value = 'products'
+        productFilter.value = 'sold'
+      }
+    })
+  }
+  if (missingImageProducts.value > 0) {
+    items.push({
+      key: 'missing-image',
+      severity: 'danger',
+      title: `${missingImageProducts.value} product${missingImageProducts.value === 1 ? '' : 's'} missing a photo`,
+      detail: 'Products without photos are far less likely to get clicks.',
+      action: () => {
+        tab.value = 'products'
+        productFilter.value = 'missingImage'
+      }
+    })
+  }
+  if (hiddenGalleryItems.value > 0) {
+    items.push({
+      key: 'hidden-gallery',
+      severity: 'info',
+      title: `${hiddenGalleryItems.value} gallery item${hiddenGalleryItems.value === 1 ? '' : 's'} hidden`,
+      detail: 'Hidden items will not show up on the public gallery page.',
+      action: () => {
+        tab.value = 'gallery'
+        galleryFilter.value = 'hidden'
+      }
+    })
+  }
+  return items
+})
+
+function selectTab(key) {
+  tab.value = key
+  mobileNavOpen.value = false
+}
+
+function goAddProduct() {
+  tab.value = 'products'
+  openProductForm(null)
+}
+
+function goAddGallery() {
+  tab.value = 'gallery'
+  openGalleryForm(null)
+}
 
 const filteredAnalytics = computed(() => {
   return analyticsEvents.value.filter(isCustomerEvent)
@@ -614,15 +745,7 @@ const intentSegments = computed(() => [
   { label: 'Gallery', count: galleryInterestCount.value, color: '#7b6fb0' }
 ])
 
-const productStatusSegments = computed(() => [
-  { label: 'Available', count: availableProducts.value, color: '#1f9d57' },
-  { label: 'Sold out', count: soldOutProducts.value, color: '#a33b2f' },
-  { label: 'Featured', count: featuredProducts.value, color: '#a85f33' },
-  { label: 'Gallery', count: visibleGalleryItems.value, color: '#7b6fb0' }
-])
-
 const intentDonutStyle = computed(() => ({ background: donutGradient(intentSegments.value) }))
-const productStatusDonutStyle = computed(() => ({ background: donutGradient(productStatusSegments.value) }))
 
 const topProducts = computed(() => {
   const grouped = new Map()
@@ -641,20 +764,6 @@ const topProducts = computed(() => {
   const list = Array.from(grouped.values()).sort((a, b) => b.total - a.total).slice(0, 4)
   const max = Math.max(1, ...list.map((item) => item.total))
   return list.map((item) => ({ ...item, percent: Math.max(8, Math.round((item.total / max) * 100)) }))
-})
-
-const topPages = computed(() => {
-  const grouped = new Map()
-  filteredAnalytics.value
-    .filter((event) => event.event_type === 'page_view' && event.page_path)
-    .forEach((event) => {
-      const key = normalizePagePath(event.page_path)
-      grouped.set(key, (grouped.get(key) || 0) + 1)
-    })
-
-  const list = Array.from(grouped, ([name, count]) => ({ name, label: pageLabel(name), count })).sort((a, b) => b.count - a.count).slice(0, 5)
-  const max = Math.max(1, ...list.map((item) => item.count))
-  return list.map((item) => ({ ...item, percent: Math.max(8, Math.round((item.count / max) * 100)) }))
 })
 
 const dailyTrend = computed(() => {
@@ -685,16 +794,6 @@ const dailyTrend = computed(() => {
     productPercent: day.product ? Math.max(8, Math.round((day.product / max) * 100)) : 0,
     whatsappPercent: day.whatsapp ? Math.max(8, Math.round((day.whatsapp / max) * 100)) : 0
   }))
-})
-
-const funnelStats = computed(() => {
-  const max = Math.max(1, pageViewCount.value, productViewCount.value, whatsappClickCount.value)
-  return [
-    { label: 'Website visits', count: pageViewCount.value },
-    { label: 'Product detail views', count: productViewCount.value },
-    { label: 'WhatsApp order/enquiry starts', count: whatsappClickCount.value },
-    { label: 'Gallery custom-order interest', count: galleryInterestCount.value }
-  ].map((step) => ({ ...step, percent: Math.max(6, Math.round((step.count / max) * 100)) }))
 })
 
 const filteredProducts = computed(() => {
@@ -1203,17 +1302,6 @@ async function loadAnalytics() {
   loadingAnalytics.value = false
 }
 
-function formatEventType(type) {
-  const labels = {
-    page_view: 'Page view',
-    product_view: 'Product view',
-    whatsapp_click: 'WhatsApp',
-    gallery_view: 'Gallery view',
-    custom_order_click: 'Custom order'
-  }
-  return labels[type] || type
-}
-
 function donutGradient(segments) {
   const total = segments.reduce((sum, segment) => sum + segment.count, 0)
   if (!total) return 'conic-gradient(#eadfd2 0deg 360deg)'
@@ -1241,44 +1329,10 @@ function normalizePagePath(path) {
   return clean || '/'
 }
 
-function pageLabel(path) {
-  const clean = normalizePagePath(path)
-  if (clean === '/') return 'Shop'
-  if (clean === '/gallery') return 'Gallery'
-  if (clean === '/about') return 'About Us'
-  if (clean.startsWith('/product/')) {
-    const slug = clean.split('/').filter(Boolean).at(-1) || 'product'
-    return `Product: ${titleFromSlug(slug)}`
-  }
-  return clean
-}
-
-function titleFromSlug(value) {
-  return String(value || '')
-    .split('-')
-    .filter(Boolean)
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ')
-}
-
 function cleanAnalyticsName(value) {
   const text = String(value || '').trim()
   if (!text || text.toLowerCase() === 'undefined' || text.toLowerCase() === 'null') return 'Unnamed product'
   return text
-}
-
-function eventDisplayName(event) {
-  return cleanAnalyticsName(event.product_name || event.metadata?.title || pageLabel(event.page_path))
-}
-
-function formatEventTime(value) {
-  if (!value) return ''
-  return new Intl.DateTimeFormat('en-IN', {
-    day: '2-digit',
-    month: 'short',
-    hour: '2-digit',
-    minute: '2-digit'
-  }).format(new Date(value))
 }
 
 onMounted(async () => {
@@ -1287,16 +1341,39 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+/* ============ design tokens ============ */
 .admin-page {
+  --ink: #241f1a;
+  --ink-soft: #77695f;
+  --paper: #fffaf4;
+  --card: #ffffff;
+  --card-soft: #fffdf8;
+  --line: #eadfd2;
+  --accent: #a85f33;
+  --accent-deep: #79401f;
+  --accent-tint: #f2e5d7;
+  --good: #1f9d57;
+  --good-tint: #e5f4e8;
+  --bad: #a33b2f;
+  --bad-tint: #fff0ef;
+  --warn-tint: #fff7d8;
+  --violet: #7b6fb0;
+
   min-height: 100vh;
-  background: #fffaf4;
+  background: var(--paper);
+  color: var(--ink);
 }
 
+* {
+  box-sizing: border-box;
+}
+
+/* ============ header ============ */
 .admin-header {
   position: sticky;
   top: 0;
   z-index: 100;
-  border-bottom: 1px solid #eadfd2;
+  border-bottom: 1px solid var(--line);
   background: rgba(255, 253, 248, 0.96);
   box-shadow: 0 8px 24px rgba(65, 42, 24, 0.05);
   backdrop-filter: blur(12px);
@@ -1306,16 +1383,34 @@ onMounted(async () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 16px;
-  width: min(1120px, 92vw);
+  gap: 14px;
+  width: min(1280px, 94vw);
   margin: 0 auto;
   padding: 14px 0;
+}
+
+.nav-burger {
+  display: none;
+  flex-direction: column;
+  gap: 4px;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  padding: 6px;
+}
+
+.nav-burger span {
+  width: 20px;
+  height: 2px;
+  background: var(--ink);
+  border-radius: 2px;
 }
 
 .admin-brand {
   display: flex;
   gap: 12px;
   align-items: center;
+  margin-right: auto;
 }
 
 .admin-brand-icon {
@@ -1324,9 +1419,10 @@ onMounted(async () => {
   width: 42px;
   height: 42px;
   border-radius: 999px;
-  background: #a85f33;
+  background: var(--accent);
   color: #ffffff;
   font-weight: 900;
+  flex: 0 0 auto;
 }
 
 .admin-brand-name,
@@ -1339,167 +1435,117 @@ onMounted(async () => {
 }
 
 .admin-brand-name {
-  color: #241f1a;
+  color: var(--ink);
   font-size: 18px;
   font-weight: 900;
 }
 
 .admin-brand-role {
-  color: #77695f;
+  color: var(--ink-soft);
   font-size: 12px;
   font-weight: 900;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
-.admin-header-actions,
-.products-row-actions,
-.gallery-admin-actions,
-.modal-footer {
+.admin-header-actions {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
   align-items: center;
 }
 
-.admin-body {
-  padding: 32px 0 64px;
-}
-
-.admin-overview {
+/* ============ shell: sidebar + main ============ */
+.admin-shell {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 14px;
-  margin-bottom: 24px;
+  grid-template-columns: 240px minmax(0, 1fr);
+  gap: 0;
+  width: min(1280px, 94vw);
+  margin: 0 auto;
 }
 
-.overview-card {
-  padding: 18px;
-  border: 1px solid #eadfd2;
-  border-radius: 18px;
-  background: linear-gradient(180deg, #ffffff, #fff8ef);
-  box-shadow: 0 14px 34px rgba(65, 42, 24, 0.07);
+.admin-sidebar {
+  position: sticky;
+  top: 76px;
+  align-self: start;
+  height: calc(100vh - 100px);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 22px 14px 22px 0;
 }
 
-.overview-card span {
-  color: #79401f;
-  font-size: 12px;
-  font-weight: 900;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+.sidebar-top {
+  display: none;
 }
 
-.overview-card strong {
-  display: block;
-  margin: 6px 0 4px;
-  color: #241f1a;
-  font-size: 32px;
-  line-height: 1;
+.sidebar-nav {
+  display: grid;
+  gap: 4px;
 }
 
-.overview-card p {
-  margin: 0;
-  color: #77695f;
-  font-size: 13px;
-  font-weight: 700;
-}
-
-.admin-btn {
-  display: inline-flex;
+.sidebar-link {
+  display: flex;
   align-items: center;
-  justify-content: center;
-  min-height: 42px;
-  border: 1px solid transparent;
-  border-radius: 999px;
-  padding: 10px 16px;
+  gap: 12px;
+  border: 0;
+  border-radius: 14px;
+  padding: 11px 12px;
+  background: transparent;
+  color: var(--ink-soft);
   cursor: pointer;
   font-weight: 850;
-  transition: background 160ms ease, border-color 160ms ease, box-shadow 160ms ease, color 160ms ease, transform 160ms ease;
+  text-align: left;
+  transition: background 140ms ease, color 140ms ease;
 }
 
-.admin-btn:hover {
-  box-shadow: 0 10px 24px rgba(65, 42, 24, 0.1);
-  transform: translateY(-1px);
+.sidebar-link:hover {
+  background: var(--accent-tint);
+  color: var(--accent-deep);
 }
 
-.admin-btn:focus-visible,
-.admin-tab:focus-visible,
-.modal-close:focus-visible,
-.upload-zone:focus-within {
-  outline: 3px solid rgba(168, 95, 51, 0.24);
-  outline-offset: 3px;
-}
-
-.admin-btn.small {
-  min-height: 36px;
-  padding: 7px 12px;
-  font-size: 13px;
-}
-
-.admin-btn.primary {
-  background: #a85f33;
+.sidebar-link.active {
+  background: var(--accent);
   color: #ffffff;
 }
 
-.admin-btn.outline {
-  border-color: #d8c8b8;
-  background: #ffffff;
-  color: #261f1a;
+.sidebar-link-icon {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  flex: 0 0 auto;
+  font-size: 15px;
 }
 
-.admin-btn.ghost {
-  background: #f2e5d7;
-  color: #261f1a;
+.sidebar-link-label {
+  flex: 1;
 }
 
-.admin-btn.warning {
-  border-color: #eed987;
-  background: #fff7d8;
-  color: #79401f;
-}
-
-.admin-btn.danger {
-  background: #fff0ef;
-  color: #a33b2f;
-}
-
-.admin-btn:disabled {
-  cursor: not-allowed;
-  opacity: 0.65;
-}
-
-.admin-tabs {
-  display: flex;
-  gap: 0;
-  margin-bottom: 28px;
-  border-bottom: 2px solid #eadfd2;
-}
-
-.admin-tab {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  margin-bottom: -2px;
-  border: 0;
-  border-bottom: 2px solid transparent;
-  padding: 12px 18px;
-  background: transparent;
-  color: #77695f;
-  cursor: pointer;
-  font-weight: 900;
-}
-
-.admin-tab.active {
-  border-bottom-color: #a85f33;
-  color: #a85f33;
-}
-
-.tab-count {
+.sidebar-link-count {
   border-radius: 999px;
   padding: 2px 8px;
-  background: #f2e5d7;
-  color: #79401f;
+  background: rgba(255, 255, 255, 0.25);
   font-size: 12px;
+}
+
+.sidebar-link:not(.active) .sidebar-link-count {
+  background: var(--accent-tint);
+  color: var(--accent-deep);
+}
+
+.sidebar-foot {
+  display: none;
+}
+
+.nav-scrim {
+  display: none;
+}
+
+/* ============ main body ============ */
+.admin-body {
+  min-width: 0;
+  padding: 28px 0 100px 24px;
+  border-left: 1px solid var(--line);
 }
 
 .tab-header {
@@ -1519,57 +1565,264 @@ onMounted(async () => {
 
 .tab-title {
   margin: 0 0 6px;
-  color: #241f1a;
-  font-size: 30px;
+  color: var(--ink);
+  font-size: 28px;
 }
 
 .tab-sub {
   margin: 0;
-  color: #77695f;
+  color: var(--ink-soft);
 }
 
-.analytics-grid {
+/* ============ buttons ============ */
+.admin-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 10px 16px;
+  cursor: pointer;
+  font-weight: 850;
+  transition: background 160ms ease, border-color 160ms ease, box-shadow 160ms ease, color 160ms ease, transform 160ms ease;
+}
+
+.admin-btn:hover {
+  box-shadow: 0 10px 24px rgba(65, 42, 24, 0.1);
+  transform: translateY(-1px);
+}
+
+.admin-btn:focus-visible,
+.sidebar-link:focus-visible,
+.bottom-nav-link:focus-visible,
+.modal-close:focus-visible,
+.upload-zone:focus-within,
+.quick-action:focus-visible,
+.attention-row:focus-visible {
+  outline: 3px solid rgba(168, 95, 51, 0.24);
+  outline-offset: 3px;
+}
+
+.admin-btn.small {
+  min-height: 36px;
+  padding: 7px 12px;
+  font-size: 13px;
+}
+
+.admin-btn.primary {
+  background: var(--accent);
+  color: #ffffff;
+}
+
+.admin-btn.outline {
+  border-color: #d8c8b8;
+  background: var(--card);
+  color: var(--ink);
+}
+
+.admin-btn.ghost {
+  background: var(--accent-tint);
+  color: var(--ink);
+}
+
+.admin-btn.warning {
+  border-color: #eed987;
+  background: var(--warn-tint);
+  color: var(--accent-deep);
+}
+
+.admin-btn.danger {
+  background: var(--bad-tint);
+  color: var(--bad);
+}
+
+.admin-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+/* ============ quick actions ============ */
+.quick-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.quick-action {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 14px 16px;
+  background: var(--card);
+  cursor: pointer;
+  transition: border-color 140ms ease, box-shadow 140ms ease, transform 140ms ease;
+}
+
+.quick-action:hover {
+  border-color: var(--accent);
+  box-shadow: 0 14px 30px rgba(65, 42, 24, 0.08);
+  transform: translateY(-1px);
+}
+
+.quick-action-icon {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 auto;
+  border-radius: 12px;
+  background: var(--accent-tint);
+  color: var(--accent-deep);
+  font-weight: 900;
+}
+
+.quick-action strong {
+  display: block;
+  color: var(--ink);
+  font-size: 14px;
+}
+
+.quick-action small {
+  display: block;
+  margin-top: 2px;
+  color: var(--ink-soft);
+  font-size: 12px;
+}
+
+/* ============ metric grid ============ */
+.metric-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 14px;
   margin-bottom: 18px;
 }
 
-.analytics-card,
-.analytics-panel {
-  border: 1px solid #eadfd2;
+.metric-card {
+  padding: 18px;
+  border: 1px solid var(--line);
   border-radius: 18px;
-  background: linear-gradient(180deg, #fffdf8 0%, #fff9f1 100%);
+  background: linear-gradient(180deg, var(--card), var(--card-soft));
   box-shadow: 0 14px 34px rgba(65, 42, 24, 0.07);
 }
 
-.analytics-card {
-  padding: 20px;
+.metric-card.accent {
+  border-color: #d8c8b8;
+  background: linear-gradient(180deg, #fff6ec, #fff0e0);
 }
 
-.analytics-card span,
-.panel-heading span {
-  color: #8a4a25;
+.metric-card span {
+  color: var(--accent-deep);
   font-size: 12px;
   font-weight: 900;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
-.analytics-card strong {
+.metric-card strong {
   display: block;
-  margin: 8px 0 4px;
-  color: #241f1a;
-  font-size: 38px;
+  margin: 6px 0 4px;
+  color: var(--ink);
+  font-size: 30px;
   line-height: 1;
 }
 
-.analytics-card p,
-.mini-empty,
-.bar-row span {
+.metric-card p {
   margin: 0;
-  color: #77695f;
+  color: var(--ink-soft);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+/* ============ needs attention ============ */
+.attention-panel {
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--card);
+  padding: 18px;
+  margin-bottom: 18px;
+}
+
+.attention-list {
+  display: grid;
+  gap: 8px;
+}
+
+.attention-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 12px 14px;
+  background: var(--card-soft);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 140ms ease, background 140ms ease;
+}
+
+.attention-row:hover {
+  border-color: var(--accent);
+  background: #ffffff;
+}
+
+.attention-dot {
+  width: 10px;
+  height: 10px;
+  flex: 0 0 auto;
+  border-radius: 999px;
+}
+
+.attention-dot.warn {
+  background: #d39a1f;
+}
+
+.attention-dot.danger {
+  background: var(--bad);
+}
+
+.attention-dot.info {
+  background: var(--violet);
+}
+
+.attention-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.attention-text strong {
+  display: block;
+  color: var(--ink);
   font-size: 14px;
+}
+
+.attention-text small {
+  display: block;
+  margin-top: 2px;
+  color: var(--ink-soft);
+  font-size: 12px;
+}
+
+.attention-go {
+  flex: 0 0 auto;
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+/* ============ analytics ============ */
+.analytics-panel {
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: linear-gradient(180deg, var(--card-soft) 0%, #fff9f1 100%);
+  box-shadow: 0 14px 34px rgba(65, 42, 24, 0.07);
+  padding: 18px;
+  margin-bottom: 16px;
 }
 
 .analytics-panels {
@@ -1578,29 +1831,8 @@ onMounted(async () => {
   gap: 16px;
 }
 
-.analytics-panels.pro {
-  grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
-  align-items: start;
-}
-
-.analytics-panel {
-  padding: 18px;
-}
-
-.analytics-panel.wide {
-  grid-column: 1 / -1;
-}
-
-.analytics-panels.pro .chart-panel {
-  grid-column: auto;
-}
-
-.analytics-panels.compact {
-  grid-auto-flow: dense;
-}
-
-.analytics-panels.pro .interest-panel {
-  grid-column: 1 / -1;
+.analytics-panels .analytics-panel {
+  margin-bottom: 0;
 }
 
 .panel-heading {
@@ -1613,48 +1845,16 @@ onMounted(async () => {
 
 .panel-heading h3 {
   margin: 0;
-  color: #241f1a;
+  color: var(--ink);
   font-size: 18px;
 }
 
-.bar-list {
-  display: grid;
-  gap: 12px;
-}
-
-.bar-row {
-  display: grid;
-  gap: 8px;
-}
-
-.bar-row > div:first-child {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 10px;
-}
-
-.bar-row strong {
-  min-width: 0;
-  overflow: hidden;
-  color: #241f1a;
-  font-size: 15px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.bar-track {
-  overflow: hidden;
-  height: 8px;
-  border-radius: 999px;
-  background: #f2e5d7;
-}
-
-.bar-track span {
-  display: block;
-  height: 100%;
-  border-radius: inherit;
-  background: linear-gradient(90deg, #a85f33, #1f9d57);
+.panel-heading span {
+  color: var(--accent-deep);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .trend-chart {
@@ -1662,18 +1862,98 @@ onMounted(async () => {
   grid-template-columns: repeat(auto-fit, minmax(18px, 1fr));
   align-items: end;
   gap: 9px;
-  min-height: 238px;
+  min-height: 220px;
   padding: 18px 10px 6px;
-  border: 1px solid #eadfd2;
+  border: 1px solid var(--line);
   border-radius: 18px;
   background:
     linear-gradient(180deg, rgba(234, 223, 210, 0.35) 1px, transparent 1px) 0 0 / 100% 25%,
-    linear-gradient(180deg, #fffdf8, #fff8ef);
+    linear-gradient(180deg, var(--card-soft), #fff8ef);
+}
+
+.trend-day {
+  display: grid;
+  align-items: end;
+  gap: 8px;
+  min-width: 0;
+  height: 100%;
+}
+
+.trend-bar-stack {
+  display: flex;
+  align-items: end;
+  justify-content: center;
+  gap: 2px;
+  height: 160px;
+}
+
+.trend-bar-stack span {
+  display: block;
+  width: 8px;
+  min-height: 0;
+  border-radius: 999px 999px 3px 3px;
+  box-shadow: 0 5px 14px rgba(65, 42, 24, 0.08);
+}
+
+.trend-page {
+  background: #d7c6b4;
+}
+
+.trend-product {
+  background: var(--accent);
+}
+
+.trend-whatsapp {
+  background: var(--good);
+}
+
+.trend-day small {
+  overflow: hidden;
+  color: var(--ink-soft);
+  font-size: 10px;
+  font-weight: 800;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 12px;
+  color: var(--ink-soft);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.chart-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legend-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 99px;
+}
+
+.legend-dot.page {
+  background: #d7c6b4;
+}
+
+.legend-dot.product {
+  background: var(--accent);
+}
+
+.legend-dot.whatsapp {
+  background: var(--good);
 }
 
 .donut-layout {
   display: grid;
-  grid-template-columns: 132px minmax(0, 1fr);
+  grid-template-columns: 120px minmax(0, 1fr);
   gap: 16px;
   align-items: center;
 }
@@ -1681,8 +1961,8 @@ onMounted(async () => {
 .donut-chart {
   display: grid;
   place-items: center;
-  width: 132px;
-  height: 132px;
+  width: 120px;
+  height: 120px;
   border-radius: 50%;
   box-shadow: inset 0 0 0 1px rgba(65, 42, 24, 0.08), 0 14px 28px rgba(65, 42, 24, 0.08);
 }
@@ -1690,21 +1970,21 @@ onMounted(async () => {
 .donut-chart > div {
   display: grid;
   place-items: center;
-  width: 78px;
-  height: 78px;
+  width: 72px;
+  height: 72px;
   border-radius: 50%;
-  background: #fffdf8;
+  background: var(--card-soft);
   text-align: center;
 }
 
 .donut-chart strong {
-  color: #241f1a;
-  font-size: 24px;
+  color: var(--ink);
+  font-size: 22px;
   line-height: 1;
 }
 
 .donut-chart span {
-  color: #77695f;
+  color: var(--ink-soft);
   font-size: 11px;
   font-weight: 900;
   letter-spacing: 0.06em;
@@ -1733,121 +2013,12 @@ onMounted(async () => {
 }
 
 .donut-legend strong {
-  color: #241f1a;
-}
-
-.trend-day {
-  display: grid;
-  align-items: end;
-  gap: 8px;
-  min-width: 0;
-  height: 100%;
-}
-
-.trend-bar-stack {
-  display: flex;
-  align-items: end;
-  justify-content: center;
-  gap: 2px;
-  height: 174px;
-}
-
-.trend-bar-stack span {
-  display: block;
-  width: 8px;
-  min-height: 0;
-  border-radius: 999px 999px 3px 3px;
-  box-shadow: 0 5px 14px rgba(65, 42, 24, 0.08);
-}
-
-.trend-page {
-  background: #d7c6b4;
-}
-
-.trend-product {
-  background: #a85f33;
-}
-
-.trend-whatsapp {
-  background: #1f9d57;
-}
-
-.trend-day small {
-  overflow: hidden;
-  color: #77695f;
-  font-size: 10px;
-  font-weight: 800;
-  text-align: center;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.chart-legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin-top: 12px;
-  color: #77695f;
-  font-size: 13px;
-  font-weight: 800;
-}
-
-.chart-legend span {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.legend-dot {
-  width: 9px;
-  height: 9px;
-  border-radius: 99px;
-}
-
-.legend-dot.page {
-  background: #d7c6b4;
-}
-
-.legend-dot.product {
-  background: #a85f33;
-}
-
-.legend-dot.whatsapp {
-  background: #1f9d57;
-}
-
-.funnel-list {
-  display: grid;
-  gap: 16px;
-}
-
-.funnel-row {
-  display: grid;
-  gap: 8px;
-}
-
-.funnel-row > div:first-child {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.funnel-row strong {
-  color: #241f1a;
-  font-size: 26px;
-}
-
-.funnel-row span {
-  color: #77695f;
-  font-size: 13px;
-  font-weight: 800;
+  color: var(--ink);
 }
 
 .interest-list {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
+  gap: 8px;
 }
 
 .interest-row {
@@ -1855,10 +2026,10 @@ onMounted(async () => {
   justify-content: space-between;
   gap: 12px;
   min-width: 0;
-  border: 1px solid #eadfd2;
+  border: 1px solid var(--line);
   border-radius: 14px;
-  padding: 13px;
-  background: #ffffff;
+  padding: 12px;
+  background: var(--card);
 }
 
 .interest-row div {
@@ -1868,7 +2039,7 @@ onMounted(async () => {
 .interest-row strong {
   display: block;
   overflow: hidden;
-  color: #241f1a;
+  color: var(--ink);
   font-size: 14px;
   line-height: 1.25;
   text-overflow: ellipsis;
@@ -1878,7 +2049,7 @@ onMounted(async () => {
 .interest-row span {
   display: block;
   margin-top: 5px;
-  color: #77695f;
+  color: var(--ink-soft);
   font-size: 12px;
   font-weight: 800;
 }
@@ -1890,57 +2061,19 @@ onMounted(async () => {
   width: 34px;
   height: 34px;
   border-radius: 50%;
-  background: #f2e5d7;
-  color: #79401f;
+  background: var(--accent-tint);
+  color: var(--accent-deep);
   font-style: normal;
   font-weight: 900;
 }
 
-.activity-list {
-  display: grid;
-  max-height: 340px;
-  border: 1px solid #eadfd2;
-  border-radius: 16px;
-  overflow: hidden;
-  overflow-y: auto;
+.mini-empty {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 14px;
 }
 
-.activity-row {
-  display: grid;
-  grid-template-columns: 140px minmax(0, 1fr) 140px;
-  gap: 12px;
-  align-items: center;
-  padding: 12px 14px;
-  background: #ffffff;
-}
-
-.activity-row + .activity-row {
-  border-top: 1px solid #eadfd2;
-}
-
-.activity-type {
-  border-radius: 999px;
-  padding: 6px 10px;
-  background: #f2e5d7;
-  color: #79401f;
-  font-size: 12px;
-  font-weight: 900;
-}
-
-.activity-row strong {
-  min-width: 0;
-  overflow: hidden;
-  color: #241f1a;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.activity-row time {
-  color: #77695f;
-  font-size: 13px;
-  text-align: right;
-}
-
+/* ============ search/filter toolbar ============ */
 .admin-tools {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 220px;
@@ -1955,7 +2088,7 @@ onMounted(async () => {
 }
 
 .admin-search span {
-  color: #79401f;
+  color: var(--accent-deep);
   font-size: 12px;
   font-weight: 900;
   letter-spacing: 0.08em;
@@ -1966,21 +2099,22 @@ onMounted(async () => {
 .admin-filter {
   width: 100%;
   min-height: 44px;
-  border: 1px solid #eadfd2;
+  border: 1px solid var(--line);
   border-radius: 999px;
   padding: 0 15px;
-  background: #ffffff;
-  color: #261f1a;
+  background: var(--card);
+  color: var(--ink);
   outline: none;
   box-shadow: 0 10px 26px rgba(65, 42, 24, 0.05);
 }
 
 .admin-search input:focus,
 .admin-filter:focus {
-  border-color: #a85f33;
+  border-color: var(--accent);
   box-shadow: 0 0 0 3px rgba(168, 95, 51, 0.12);
 }
 
+/* ============ states ============ */
 .loading-wrap,
 .empty-state {
   display: grid;
@@ -1988,10 +2122,10 @@ onMounted(async () => {
   gap: 12px;
   min-height: 260px;
   padding: 34px;
-  border: 1px dashed #eadfd2;
+  border: 1px dashed var(--line);
   border-radius: 20px;
-  background: #fffdf8;
-  color: #77695f;
+  background: var(--card-soft);
+  color: var(--ink-soft);
   text-align: center;
 }
 
@@ -2002,8 +2136,8 @@ onMounted(async () => {
 .spinner {
   width: 28px;
   height: 28px;
-  border: 3px solid #eadfd2;
-  border-top-color: #a85f33;
+  border: 3px solid var(--line);
+  border-top-color: var(--accent);
   border-radius: 999px;
   animation: spin 850ms linear infinite;
 }
@@ -2020,16 +2154,17 @@ onMounted(async () => {
   width: 58px;
   height: 58px;
   border-radius: 999px;
-  background: #f2e5d7;
-  color: #79401f;
+  background: var(--accent-tint);
+  color: var(--accent-deep);
   font-weight: 900;
 }
 
+/* ============ products table ============ */
 .products-table {
   overflow: hidden;
-  border: 1px solid #eadfd2;
+  border: 1px solid var(--line);
   border-radius: 18px;
-  background: #ffffff;
+  background: var(--card);
   box-shadow: 0 16px 42px rgba(65, 42, 24, 0.08);
 }
 
@@ -2043,9 +2178,9 @@ onMounted(async () => {
 
 .products-table-head {
   padding: 13px 18px;
-  border-bottom: 1px solid #eadfd2;
+  border-bottom: 1px solid var(--line);
   background: #fff3e4;
-  color: #77695f;
+  color: var(--ink-soft);
   font-size: 12px;
   font-weight: 900;
   letter-spacing: 0.08em;
@@ -2075,7 +2210,7 @@ onMounted(async () => {
   height: 52px;
   overflow: hidden;
   border-radius: 12px;
-  background: #f2e5d7;
+  background: var(--accent-tint);
 }
 
 .products-row-img {
@@ -2085,24 +2220,33 @@ onMounted(async () => {
 }
 
 .products-row-img-placeholder {
-  color: #79401f;
-  font-size: 12px;
+  color: var(--accent-deep);
+  font-size: 11px;
   font-weight: 900;
+  text-align: center;
 }
 
 .products-row-name {
-  color: #241f1a;
+  color: var(--ink);
   font-weight: 900;
 }
 
 .products-row-cat {
-  color: #77695f;
+  color: var(--ink-soft);
   font-size: 13px;
 }
 
 .products-row-price {
-  color: #79401f;
+  color: var(--accent-deep);
   font-weight: 900;
+}
+
+.products-row-status,
+.products-row-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
 }
 
 .badge {
@@ -2114,21 +2258,21 @@ onMounted(async () => {
 }
 
 .badge.available {
-  background: #e5f4e8;
+  background: var(--good-tint);
   color: #266b35;
 }
 
 .badge.sold {
-  background: #fff0ef;
-  color: #a33b2f;
+  background: var(--bad-tint);
+  color: var(--bad);
 }
 
 .badge.featured {
-  margin-left: 4px;
-  background: #f2e5d7;
-  color: #79401f;
+  background: var(--accent-tint);
+  color: var(--accent-deep);
 }
 
+/* ============ gallery grid ============ */
 .gallery-admin-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
@@ -2137,9 +2281,9 @@ onMounted(async () => {
 
 .gallery-admin-card {
   overflow: hidden;
-  border: 1px solid #eadfd2;
+  border: 1px solid var(--line);
   border-radius: 18px;
-  background: #ffffff;
+  background: var(--card);
   box-shadow: 0 16px 42px rgba(65, 42, 24, 0.08);
 }
 
@@ -2151,7 +2295,7 @@ onMounted(async () => {
   position: relative;
   overflow: hidden;
   aspect-ratio: 1 / 1;
-  background: #f2e5d7;
+  background: var(--accent-tint);
 }
 
 .gallery-admin-img {
@@ -2177,7 +2321,7 @@ onMounted(async () => {
 }
 
 .gallery-admin-cat {
-  color: #79401f;
+  color: var(--accent-deep);
   font-size: 12px;
   font-weight: 900;
   letter-spacing: 0.08em;
@@ -2185,20 +2329,31 @@ onMounted(async () => {
 }
 
 .gallery-admin-name {
-  color: #261f1a;
+  color: var(--ink);
   font-weight: 900;
 }
 
 .gallery-admin-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
   padding: 12px 14px;
-  border-top: 1px solid #eadfd2;
+  border-top: 1px solid var(--line);
+}
+
+/* ============ settings ============ */
+.settings-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(260px, 0.9fr);
+  gap: 18px;
+  align-items: start;
 }
 
 .settings-panel {
-  border: 1px solid #eadfd2;
+  border: 1px solid var(--line);
   border-radius: 20px;
   padding: 22px;
-  background: #ffffff;
+  background: var(--card);
   box-shadow: 0 16px 42px rgba(65, 42, 24, 0.08);
 }
 
@@ -2206,6 +2361,241 @@ onMounted(async () => {
   display: flex;
   justify-content: flex-end;
   margin-top: 18px;
+}
+
+.settings-preview {
+  position: sticky;
+  top: 96px;
+}
+
+.preview-label {
+  margin: 0 0 8px;
+  color: var(--accent-deep);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.preview-card {
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 18px;
+  background: linear-gradient(180deg, var(--card), var(--card-soft));
+  box-shadow: 0 14px 34px rgba(65, 42, 24, 0.07);
+}
+
+.preview-photo {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: 12px;
+  object-fit: cover;
+  margin-bottom: 14px;
+}
+
+.preview-photo.placeholder {
+  display: grid;
+  place-items: center;
+  background: var(--accent-tint);
+  color: var(--accent-deep);
+  font-weight: 900;
+}
+
+.preview-card h4 {
+  margin: 0 0 8px;
+  color: var(--ink);
+  font-size: 17px;
+}
+
+.preview-card p {
+  margin: 0 0 14px;
+  color: var(--ink-soft);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.preview-contact {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.preview-note {
+  margin: 10px 2px 0;
+  color: var(--ink-soft);
+  font-size: 12px;
+}
+
+/* ============ forms / modals ============ */
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.field {
+  display: grid;
+  gap: 8px;
+}
+
+.field.full {
+  grid-column: 1 / -1;
+}
+
+.field label {
+  color: var(--ink);
+  font-weight: 850;
+}
+
+.field input,
+.field textarea,
+.field select {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px 13px;
+  color: var(--ink);
+  background: var(--card-soft);
+  outline: none;
+  transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
+}
+
+.field input:focus,
+.field textarea:focus,
+.field select:focus {
+  border-color: var(--accent);
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(168, 95, 51, 0.12);
+}
+
+.field textarea {
+  resize: vertical;
+}
+
+.toggle-label {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.upload-zone {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 138px;
+  overflow: hidden;
+  border: 2px dashed #d8c8b8;
+  border-radius: 16px;
+  background: var(--paper);
+  cursor: pointer;
+  transition: border-color 160ms ease, background 160ms ease, box-shadow 160ms ease;
+}
+
+.upload-zone:hover {
+  border-color: var(--accent);
+  background: #fff8ef;
+  box-shadow: 0 12px 30px rgba(65, 42, 24, 0.06);
+}
+
+.upload-zone input[type="file"] {
+  display: none;
+}
+
+.upload-zone.has-file {
+  border-style: solid;
+}
+
+.upload-placeholder {
+  display: grid;
+  gap: 4px;
+  place-items: center;
+  color: var(--ink-soft);
+  padding: 14px;
+  text-align: center;
+}
+
+.upload-placeholder span {
+  max-width: 340px;
+  line-height: 1.45;
+}
+
+.upload-preview {
+  position: relative;
+  width: 100%;
+}
+
+.upload-preview img,
+.upload-preview video {
+  display: block;
+  width: 100%;
+  max-height: 220px;
+  object-fit: cover;
+}
+
+.photo-preview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.photo-preview {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  aspect-ratio: 1 / 1;
+  background: var(--accent-tint);
+  box-shadow: 0 10px 24px rgba(65, 42, 24, 0.08);
+}
+
+.photo-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.photo-preview span {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  border-radius: 999px;
+  padding: 4px 8px;
+  background: var(--accent);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.upload-remove {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  border: 0;
+  border-radius: 999px;
+  padding: 6px 10px;
+  background: rgba(38, 31, 26, 0.78);
+  color: #ffffff;
+  cursor: pointer;
+  font-weight: 900;
+  min-height: 32px;
+}
+
+.form-error {
+  margin: 14px 0 0;
+  color: var(--bad);
+  font-weight: 850;
+}
+
+.confirm-text {
+  color: #5f5147;
+  line-height: 1.65;
 }
 
 .modal-overlay {
@@ -2246,13 +2636,13 @@ onMounted(async () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid #eadfd2;
+  border-bottom: 1px solid var(--line);
   background: #ffffff;
 }
 
 .modal-title {
   margin: 0;
-  color: #241f1a;
+  color: var(--ink);
   font-size: 21px;
 }
 
@@ -2260,8 +2650,8 @@ onMounted(async () => {
   border: 0;
   border-radius: 999px;
   padding: 8px 12px;
-  background: #f2e5d7;
-  color: #261f1a;
+  background: var(--accent-tint);
+  color: var(--ink);
   cursor: pointer;
   font-weight: 900;
 }
@@ -2275,216 +2665,163 @@ onMounted(async () => {
   position: sticky;
   bottom: 0;
   z-index: 2;
-  justify-content: flex-end;
-  border-top: 1px solid #eadfd2;
-  background: #ffffff;
-}
-
-.form-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
-}
-
-.field {
-  display: grid;
-  gap: 8px;
-}
-
-.field.full {
-  grid-column: 1 / -1;
-}
-
-.field label {
-  color: #261f1a;
-  font-weight: 850;
-}
-
-.field input,
-.field textarea,
-.field select {
-  width: 100%;
-  min-height: 44px;
-  border: 1px solid #eadfd2;
-  border-radius: 12px;
-  padding: 12px 13px;
-  color: #261f1a;
-  background: #fffdf8;
-  outline: none;
-  transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
-}
-
-.field input:focus,
-.field textarea:focus,
-.field select:focus {
-  border-color: #a85f33;
-  background: #ffffff;
-  box-shadow: 0 0 0 3px rgba(168, 95, 51, 0.12);
-}
-
-.field textarea {
-  resize: vertical;
-}
-
-.toggle-label {
   display: flex;
-  gap: 10px;
-  align-items: center;
-}
-
-.upload-zone {
-  position: relative;
-  display: grid;
-  place-items: center;
-  min-height: 138px;
-  overflow: hidden;
-  border: 2px dashed #d8c8b8;
-  border-radius: 16px;
-  background: #fffaf4;
-  cursor: pointer;
-  transition: border-color 160ms ease, background 160ms ease, box-shadow 160ms ease;
-}
-
-.upload-zone:hover {
-  border-color: #a85f33;
-  background: #fff8ef;
-  box-shadow: 0 12px 30px rgba(65, 42, 24, 0.06);
-}
-
-.upload-zone input[type="file"] {
-  display: none;
-}
-
-.upload-zone.has-file {
-  border-style: solid;
-}
-
-.upload-placeholder {
-  display: grid;
-  gap: 4px;
-  place-items: center;
-  color: #77695f;
-  padding: 14px;
-  text-align: center;
-}
-
-.upload-placeholder span {
-  max-width: 340px;
-  line-height: 1.45;
-}
-
-.upload-preview {
-  position: relative;
-  width: 100%;
-}
-
-.upload-preview img,
-.upload-preview video {
-  display: block;
-  width: 100%;
-  max-height: 220px;
-  object-fit: cover;
-}
-
-.photo-preview-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-  gap: 10px;
-  margin-top: 10px;
-}
-
-.photo-preview {
-  position: relative;
-  overflow: hidden;
-  border: 1px solid #eadfd2;
-  border-radius: 14px;
-  aspect-ratio: 1 / 1;
-  background: #f2e5d7;
-  box-shadow: 0 10px 24px rgba(65, 42, 24, 0.08);
-}
-
-.photo-preview img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.photo-preview span {
-  position: absolute;
-  top: 8px;
-  left: 8px;
-  border-radius: 999px;
-  padding: 4px 8px;
-  background: #a85f33;
-  color: #ffffff;
-  font-size: 11px;
-  font-weight: 900;
-}
-
-.upload-remove {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  border: 0;
-  border-radius: 999px;
-  padding: 6px 10px;
-  background: rgba(38, 31, 26, 0.78);
-  color: #ffffff;
-  cursor: pointer;
-  font-weight: 900;
-  min-height: 32px;
-}
-
-.form-error {
-  margin: 14px 0 0;
-  color: #a33b2f;
-  font-weight: 850;
-}
-
-.confirm-text {
-  color: #5f5147;
-  line-height: 1.65;
+  gap: 8px;
+  justify-content: flex-end;
+  border-top: 1px solid var(--line);
+  background: #ffffff;
 }
 
 .toast {
   position: fixed;
   right: 22px;
-  bottom: 22px;
+  bottom: 90px;
   z-index: 800;
   border-radius: 999px;
   padding: 12px 16px;
-  background: #2f8f4f;
+  background: var(--good);
   color: #ffffff;
   font-weight: 900;
   box-shadow: 0 16px 42px rgba(65, 42, 24, 0.18);
 }
 
 .toast.error {
-  background: #a33b2f;
+  background: var(--bad);
 }
 
-@media (max-width: 820px) {
-  .admin-overview {
+/* ============ mobile bottom nav ============ */
+.bottom-nav {
+  display: none;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 160ms ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+/* ============ responsive ============ */
+@media (max-width: 980px) {
+  .admin-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .nav-burger {
+    display: flex;
+  }
+
+  .admin-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 600;
+    width: min(280px, 84vw);
+    height: 100dvh;
+    background: #ffffff;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.22);
+    padding: 18px;
+    transform: translateX(-100%);
+    transition: transform 220ms ease;
+  }
+
+  .admin-sidebar.open {
+    transform: translateX(0);
+  }
+
+  .sidebar-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+  }
+
+  .drawer-only {
+    display: flex;
+  }
+
+  .nav-close {
+    border: 0;
+    background: var(--accent-tint);
+    border-radius: 999px;
+    width: 34px;
+    height: 34px;
+    cursor: pointer;
+    font-weight: 900;
+  }
+
+  .sidebar-foot {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: auto;
+  }
+
+  .nav-scrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 590;
+    background: rgba(26, 23, 20, 0.45);
+  }
+
+  .admin-header-actions {
+    display: none;
+  }
+
+  .admin-body {
+    border-left: 0;
+    padding: 22px 0 90px;
+  }
+
+  .bottom-nav {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 200;
+    border-top: 1px solid var(--line);
+    background: rgba(255, 253, 248, 0.97);
+    backdrop-filter: blur(12px);
+    padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
+  }
+
+  .bottom-nav-link {
+    display: grid;
+    justify-items: center;
+    gap: 2px;
+    border: 0;
+    background: none;
+    padding: 6px 2px;
+    color: var(--ink-soft);
+    font-size: 11px;
+    font-weight: 800;
+    cursor: pointer;
+  }
+
+  .bottom-nav-icon {
+    font-size: 17px;
+  }
+
+  .bottom-nav-link.active {
+    color: var(--accent);
+  }
+
+  .quick-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .metric-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .analytics-grid,
-  .analytics-panels,
-  .analytics-panels.pro {
+  .analytics-panels {
     grid-template-columns: 1fr;
-  }
-
-  .analytics-panels.pro .chart-panel,
-  .analytics-panels.pro .interest-panel {
-    grid-column: 1;
-  }
-
-  .activity-row {
-    grid-template-columns: 1fr;
-  }
-
-  .activity-row time {
-    text-align: left;
   }
 
   .admin-tools {
@@ -2503,97 +2840,68 @@ onMounted(async () => {
   .form-grid {
     grid-template-columns: 1fr;
   }
+
+  .settings-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .settings-preview {
+    position: static;
+  }
 }
 
 @media (max-width: 560px) {
-  .admin-overview {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .metric-grid {
     gap: 10px;
   }
 
-  .overview-card {
-    min-height: 136px;
+  .metric-card {
+    min-height: 120px;
     padding: 15px;
   }
 
-  .overview-card span {
+  .metric-card span {
     font-size: 10px;
   }
 
-  .overview-card strong {
-    font-size: 34px;
-  }
-
-  .overview-card p {
-    font-size: 12px;
-  }
-
-  .analytics-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
-  }
-
-  .analytics-card,
-  .analytics-panel {
-    border-radius: 18px;
-    padding: 15px;
-  }
-
-  .analytics-card strong {
-    font-size: 34px;
+  .metric-card strong {
+    font-size: 28px;
   }
 
   .trend-chart {
-    min-height: 180px;
+    min-height: 170px;
   }
 
   .trend-bar-stack {
-    height: 116px;
+    height: 110px;
   }
 
   .donut-layout {
-    grid-template-columns: 112px minmax(0, 1fr);
+    grid-template-columns: 100px minmax(0, 1fr);
     gap: 12px;
   }
 
   .donut-chart {
-    width: 112px;
-    height: 112px;
+    width: 100px;
+    height: 100px;
   }
 
   .donut-chart > div {
-    width: 68px;
-    height: 68px;
+    width: 62px;
+    height: 62px;
   }
 
   .donut-chart strong {
-    font-size: 20px;
+    font-size: 18px;
   }
 
-  .interest-list {
-    grid-template-columns: 1fr;
-  }
-
-  .bar-row > div:first-child {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 3px;
-  }
-
-  .admin-header-inner,
   .tab-header {
     align-items: flex-start;
     flex-direction: column;
   }
 
-  .admin-header-actions,
-  .tab-actions,
-  .products-row-actions,
-  .gallery-admin-actions {
-    width: 100%;
-  }
-
   .tab-actions {
+    width: 100%;
     align-items: stretch;
     flex-direction: column;
   }
@@ -2602,23 +2910,9 @@ onMounted(async () => {
     flex: 1;
   }
 
-  .admin-body {
-    padding-top: 20px;
-  }
-
-  .admin-tabs {
-    overflow-x: auto;
-    padding-bottom: 2px;
-  }
-
-  .admin-tab {
-    flex: 0 0 auto;
-    padding-inline: 14px;
-  }
-
   .tab-title {
-    font-size: 40px;
-    line-height: 1.05;
+    font-size: 30px;
+    line-height: 1.1;
   }
 
   .products-table {
@@ -2631,7 +2925,7 @@ onMounted(async () => {
   }
 
   .products-row {
-    border: 1px solid #eadfd2;
+    border: 1px solid var(--line);
     border-radius: 18px;
     padding: 14px;
     background: #ffffff;
@@ -2648,18 +2942,12 @@ onMounted(async () => {
   }
 
   .products-row-name {
-    font-size: 20px;
+    font-size: 18px;
     line-height: 1.18;
   }
 
   .products-row-price {
-    font-size: 22px;
-  }
-
-  .products-row-status {
-    display: flex;
-    gap: 6px;
-    flex-wrap: wrap;
+    font-size: 20px;
   }
 
   .products-row-actions {

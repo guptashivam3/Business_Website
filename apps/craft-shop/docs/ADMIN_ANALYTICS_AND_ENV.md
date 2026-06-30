@@ -97,3 +97,7 @@ Current folders:
 - `_incoming_photos`: local photo import/source folder; do not deploy unless intentionally needed.
 
 Do not delete `frontend`, `sql`, or `docs`. The placeholder `backend` and `tests` folders are harmless but not used in version 1.
+
+Removed cleanup:
+
+- Old unused component files under `frontend/src/components` were removed after the active pages stopped importing them.
