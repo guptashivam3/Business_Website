@@ -18,6 +18,19 @@
           <button class="admin-btn ghost small" type="button" @click="logout">Logout</button>
         </div>
       </div>
+      <nav class="mobile-top-tabs" aria-label="Admin sections">
+        <button
+          v-for="item in navItems"
+          :key="item.key"
+          class="mobile-top-tab"
+          :class="{ active: tab === item.key }"
+          type="button"
+          @click="selectTab(item.key)"
+        >
+          <span>{{ item.icon }}</span>{{ item.label }}
+        </button>
+        <RouterLink to="/" class="mobile-top-tab shop" target="_blank">Shop</RouterLink>
+      </nav>
     </header>
 
     <div class="admin-shell">
@@ -68,7 +81,7 @@
               <h2 class="tab-title">Welcome back</h2>
               <p class="tab-sub">Here's how customers are interacting with {{ shopName }} right now.</p>
             </div>
-            <button class="admin-btn outline small" type="button" @click="loadAnalytics">↻ Refresh</button>
+            <button class="admin-btn outline small dashboard-refresh-top" type="button" @click="loadAnalytics">Refresh</button>
           </div>
 
           <!-- Quick actions -->
@@ -97,26 +110,29 @@
           </div>
 
           <!-- Key metrics -->
+          <div class="mobile-refresh-row">
+            <button class="admin-btn outline small" type="button" @click="loadAnalytics">Refresh dashboard</button>
+          </div>
           <div class="metric-grid">
             <div class="metric-card">
-              <span>Products</span>
-              <strong>{{ products.length }}</strong>
-              <p>{{ availableProducts }} available · {{ soldOutProducts }} sold out</p>
+              <span>Site Visits</span>
+              <strong>{{ pageViewCount }}</strong>
+              <p>Customer-facing page views</p>
             </div>
             <div class="metric-card">
-              <span>Gallery</span>
-              <strong>{{ galleryItems.length }}</strong>
-              <p>{{ visibleGalleryItems }} visible · {{ hiddenGalleryItems }} hidden</p>
-            </div>
-            <div class="metric-card">
-              <span>Product Views</span>
+              <span>Item Interest</span>
               <strong>{{ productViewCount }}</strong>
-              <p>{{ pageViewCount }} total site visits</p>
+              <p>Product detail opens</p>
+            </div>
+            <div class="metric-card">
+              <span>Order Leads</span>
+              <strong>{{ whatsappClickCount }}</strong>
+              <p>WhatsApp order starts</p>
             </div>
             <div class="metric-card accent">
-              <span>WhatsApp Clicks</span>
-              <strong>{{ whatsappClickCount }}</strong>
-              <p>{{ conversionRate }}% of product views convert</p>
+              <span>Conversion</span>
+              <strong>{{ conversionRate }}%</strong>
+              <p>Views becoming WhatsApp leads</p>
             </div>
           </div>
 
@@ -150,14 +166,26 @@
                 <h3>Customer trend</h3>
                 <span>Last 14 days</span>
               </div>
-              <div class="trend-chart" aria-label="Daily activity chart">
-                <div v-for="day in dailyTrend" :key="day.label" class="trend-day">
-                  <div class="trend-bar-stack">
-                    <span class="trend-page" :style="{ height: `${day.pagePercent}%` }"></span>
-                    <span class="trend-product" :style="{ height: `${day.productPercent}%` }"></span>
-                    <span class="trend-whatsapp" :style="{ height: `${day.whatsappPercent}%` }"></span>
-                  </div>
-                  <small>{{ day.label }}</small>
+              <div class="trend-line-chart" aria-label="Daily activity line chart">
+                <svg viewBox="0 0 100 100" preserveAspectRatio="none" role="img">
+                  <line v-for="line in 4" :key="line" x1="0" x2="100" :y1="line * 20" :y2="line * 20" class="trend-grid-line" />
+                  <polyline class="trend-line page" :points="trendLineChart.pagePoints" />
+                  <polyline class="trend-line product" :points="trendLineChart.productPoints" />
+                  <polyline class="trend-line whatsapp" :points="trendLineChart.whatsappPoints" />
+                  <g v-for="point in trendLineChart.points" :key="point.label">
+                    <circle class="trend-dot page" :cx="point.x" :cy="point.pageY" r="1.7">
+                      <title>{{ point.label }}: {{ point.page }} page views</title>
+                    </circle>
+                    <circle class="trend-dot product" :cx="point.x" :cy="point.productY" r="1.7">
+                      <title>{{ point.label }}: {{ point.product }} item views</title>
+                    </circle>
+                    <circle class="trend-dot whatsapp" :cx="point.x" :cy="point.whatsappY" r="1.7">
+                      <title>{{ point.label }}: {{ point.whatsapp }} WhatsApp clicks</title>
+                    </circle>
+                  </g>
+                </svg>
+                <div class="trend-axis">
+                  <span v-for="day in dailyTrend" :key="day.label">{{ day.label }}</span>
                 </div>
               </div>
               <div class="chart-legend">
@@ -194,11 +222,19 @@
                   <span>{{ loadingAnalytics ? 'Loading...' : `${topProducts.length} products` }}</span>
                 </div>
                 <div v-if="topProducts.length === 0" class="mini-empty">Product interest will appear after customers open product pages.</div>
-                <div v-else class="interest-list">
-                  <div v-for="item in topProducts" :key="item.name" class="interest-row">
-                    <div>
+                <div v-else class="interest-bars">
+                  <div
+                    v-for="item in topProducts"
+                    :key="item.name"
+                    class="interest-bar-row"
+                    :title="`${item.name}: ${item.views} views / ${item.clicks} WhatsApp clicks`"
+                  >
+                    <div class="interest-bar-meta">
                       <strong>{{ item.name }}</strong>
-                      <span>{{ item.views }} views · {{ item.clicks }} WhatsApp</span>
+                      <span>{{ item.views }} views / {{ item.clicks }} WhatsApp</span>
+                    </div>
+                    <div class="interest-bar-track">
+                      <span :style="{ width: `${item.percent}%` }"></span>
                     </div>
                     <em>{{ item.total }}</em>
                   </div>
@@ -434,21 +470,6 @@
         </section>
       </main>
     </div>
-
-    <!-- ============ MOBILE BOTTOM NAV ============ -->
-    <nav class="bottom-nav">
-      <button
-        v-for="item in navItems"
-        :key="item.key"
-        class="bottom-nav-link"
-        :class="{ active: tab === item.key }"
-        type="button"
-        @click="selectTab(item.key)"
-      >
-        <span class="bottom-nav-icon">{{ item.icon }}</span>
-        <span>{{ item.label }}</span>
-      </button>
-    </nav>
 
     <!-- ============ MODALS (unchanged behaviour) ============ -->
     <div v-if="showProductForm" class="modal-overlay" @click.self="closeProductForm">
@@ -794,6 +815,33 @@ const dailyTrend = computed(() => {
     productPercent: day.product ? Math.max(8, Math.round((day.product / max) * 100)) : 0,
     whatsappPercent: day.whatsapp ? Math.max(8, Math.round((day.whatsapp / max) * 100)) : 0
   }))
+})
+
+const trendLineChart = computed(() => {
+  const max = Math.max(1, ...dailyTrend.value.flatMap((day) => [day.page, day.product, day.whatsapp]))
+  const lastIndex = Math.max(1, dailyTrend.value.length - 1)
+  const yFor = (value) => 92 - (value / max) * 78
+  const points = dailyTrend.value.map((day, index) => {
+    const x = (index / lastIndex) * 100
+    return {
+      label: day.label,
+      x,
+      page: day.page,
+      product: day.product,
+      whatsapp: day.whatsapp,
+      pageY: yFor(day.page),
+      productY: yFor(day.product),
+      whatsappY: yFor(day.whatsapp)
+    }
+  })
+
+  const toPoints = (key) => points.map((point) => `${point.x},${point[key]}`).join(' ')
+  return {
+    points,
+    pagePoints: toPoints('pageY'),
+    productPoints: toPoints('productY'),
+    whatsappPoints: toPoints('whatsappY')
+  }
 })
 
 const filteredProducts = computed(() => {
@@ -1455,6 +1503,14 @@ onMounted(async () => {
   align-items: center;
 }
 
+.mobile-top-tabs {
+  display: none;
+}
+
+.mobile-refresh-row {
+  display: none;
+}
+
 /* ============ shell: sidebar + main ============ */
 .admin-shell {
   display: grid;
@@ -1595,7 +1651,7 @@ onMounted(async () => {
 
 .admin-btn:focus-visible,
 .sidebar-link:focus-visible,
-.bottom-nav-link:focus-visible,
+.mobile-top-tab:focus-visible,
 .modal-close:focus-visible,
 .upload-zone:focus-within,
 .quick-action:focus-visible,
@@ -1917,6 +1973,81 @@ onMounted(async () => {
   white-space: nowrap;
 }
 
+.trend-line-chart {
+  min-height: 236px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 16px 12px 8px;
+  background:
+    linear-gradient(180deg, rgba(234, 223, 210, 0.35) 1px, transparent 1px) 0 18px / 100% 25%,
+    linear-gradient(180deg, var(--card-soft), #fff8ef);
+}
+
+.trend-line-chart svg {
+  display: block;
+  width: 100%;
+  height: 178px;
+  overflow: visible;
+}
+
+.trend-grid-line {
+  stroke: rgba(119, 105, 95, 0.14);
+  stroke-width: 0.5;
+}
+
+.trend-line {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.8;
+  vector-effect: non-scaling-stroke;
+}
+
+.trend-line.page,
+.trend-dot.page {
+  stroke: #d7c6b4;
+  fill: #d7c6b4;
+}
+
+.trend-line.product,
+.trend-dot.product {
+  stroke: var(--accent);
+  fill: var(--accent);
+}
+
+.trend-line.whatsapp,
+.trend-dot.whatsapp {
+  stroke: var(--good);
+  fill: var(--good);
+}
+
+.trend-dot {
+  cursor: help;
+  vector-effect: non-scaling-stroke;
+}
+
+.trend-dot:hover {
+  stroke: var(--ink);
+  stroke-width: 1.2;
+}
+
+.trend-axis {
+  display: grid;
+  grid-template-columns: repeat(14, minmax(0, 1fr));
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.trend-axis span {
+  overflow: hidden;
+  color: var(--ink-soft);
+  font-size: 10px;
+  font-weight: 800;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .chart-legend {
   display: flex;
   flex-wrap: wrap;
@@ -2067,6 +2198,78 @@ onMounted(async () => {
   font-weight: 900;
 }
 
+.interest-bars {
+  display: grid;
+  gap: 12px;
+}
+
+.interest-bar-row {
+  display: grid;
+  grid-template-columns: minmax(180px, 0.55fr) minmax(120px, 1fr) 42px;
+  gap: 12px;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 12px;
+  background: var(--card);
+  cursor: help;
+  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+.interest-bar-row:hover {
+  border-color: rgba(168, 95, 51, 0.42);
+  box-shadow: 0 12px 28px rgba(65, 42, 24, 0.08);
+  transform: translateY(-1px);
+}
+
+.interest-bar-meta {
+  min-width: 0;
+}
+
+.interest-bar-meta strong {
+  display: block;
+  overflow: hidden;
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.interest-bar-meta span {
+  display: block;
+  margin-top: 5px;
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.interest-bar-track {
+  overflow: hidden;
+  height: 14px;
+  border-radius: 999px;
+  background: var(--accent-tint);
+}
+
+.interest-bar-track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--accent), var(--good));
+}
+
+.interest-bar-row em {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--accent-tint);
+  color: var(--accent-deep);
+  font-style: normal;
+  font-weight: 900;
+}
+
 .mini-empty {
   margin: 0;
   color: var(--ink-soft);
@@ -2161,55 +2364,39 @@ onMounted(async () => {
 
 /* ============ products table ============ */
 .products-table {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px;
+}
+
+.products-table-head {
+  display: none;
+}
+
+.products-row {
+  display: grid;
+  grid-template-rows: auto auto auto 1fr;
+  gap: 12px;
   overflow: hidden;
   border: 1px solid var(--line);
   border-radius: 18px;
+  padding: 12px;
   background: var(--card);
   box-shadow: 0 16px 42px rgba(65, 42, 24, 0.08);
 }
 
-.products-table-head,
-.products-row {
-  display: grid;
-  grid-template-columns: 2fr 0.75fr 1fr 2fr;
-  gap: 16px;
-  align-items: center;
-}
-
-.products-table-head {
-  padding: 13px 18px;
-  border-bottom: 1px solid var(--line);
-  background: #fff3e4;
-  color: var(--ink-soft);
-  font-size: 12px;
-  font-weight: 900;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.products-row {
-  padding: 14px 18px;
-  border-bottom: 1px solid #f0e8df;
-}
-
-.products-row:last-child {
-  border-bottom: 0;
-}
-
 .products-row-info {
-  display: flex;
-  gap: 12px;
-  align-items: center;
+  display: grid;
+  gap: 10px;
 }
 
 .products-row-img-wrap {
   display: grid;
-  flex: 0 0 auto;
   place-items: center;
-  width: 52px;
-  height: 52px;
+  width: 100%;
+  aspect-ratio: 4 / 3;
   overflow: hidden;
-  border-radius: 12px;
+  border-radius: 14px;
   background: var(--accent-tint);
 }
 
@@ -2228,6 +2415,8 @@ onMounted(async () => {
 
 .products-row-name {
   color: var(--ink);
+  font-size: 17px;
+  line-height: 1.25;
   font-weight: 900;
 }
 
@@ -2238,6 +2427,7 @@ onMounted(async () => {
 
 .products-row-price {
   color: var(--accent-deep);
+  font-size: 20px;
   font-weight: 900;
 }
 
@@ -2247,6 +2437,10 @@ onMounted(async () => {
   gap: 8px;
   flex-wrap: wrap;
   align-items: center;
+}
+
+.products-row-actions {
+  align-self: end;
 }
 
 .badge {
@@ -2689,11 +2883,6 @@ onMounted(async () => {
   background: var(--bad);
 }
 
-/* ============ mobile bottom nav ============ */
-.bottom-nav {
-  display: none;
-}
-
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 160ms ease;
@@ -2745,11 +2934,14 @@ onMounted(async () => {
 
   .nav-close {
     border: 0;
-    background: var(--accent-tint);
-    border-radius: 999px;
-    width: 34px;
-    height: 34px;
+    background: transparent;
+    width: auto;
+    height: auto;
+    padding: 4px;
+    color: var(--accent);
     cursor: pointer;
+    font-size: 22px;
+    line-height: 1;
     font-weight: 900;
   }
 
@@ -2772,44 +2964,60 @@ onMounted(async () => {
     display: none;
   }
 
+  .dashboard-refresh-top {
+    display: none;
+  }
+
+  .mobile-refresh-row {
+    display: flex;
+    justify-content: flex-start;
+    margin: -4px 0 12px;
+  }
+
+  .mobile-top-tabs {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    border-top: 1px solid rgba(234, 223, 210, 0.62);
+    padding: 8px 14px 10px;
+    scrollbar-width: none;
+  }
+
+  .mobile-top-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .mobile-top-tab {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 9px 12px;
+    background: #ffffff;
+    color: var(--ink-soft);
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 900;
+    text-decoration: none;
+  }
+
+  .mobile-top-tab.active {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: #ffffff;
+  }
+
+  .mobile-top-tab.shop {
+    border-color: rgba(31, 157, 87, 0.28);
+    background: #effaf3;
+    color: #207942;
+  }
+
   .admin-body {
     border-left: 0;
-    padding: 22px 0 90px;
-  }
-
-  .bottom-nav {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 200;
-    border-top: 1px solid var(--line);
-    background: rgba(255, 253, 248, 0.97);
-    backdrop-filter: blur(12px);
-    padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
-  }
-
-  .bottom-nav-link {
-    display: grid;
-    justify-items: center;
-    gap: 2px;
-    border: 0;
-    background: none;
-    padding: 6px 2px;
-    color: var(--ink-soft);
-    font-size: 11px;
-    font-weight: 800;
-    cursor: pointer;
-  }
-
-  .bottom-nav-icon {
-    font-size: 17px;
-  }
-
-  .bottom-nav-link.active {
-    color: var(--accent);
+    padding: 22px 0 34px;
   }
 
   .quick-actions {
@@ -2876,6 +3084,19 @@ onMounted(async () => {
     height: 110px;
   }
 
+  .trend-line-chart {
+    min-height: 178px;
+    padding: 12px 10px 8px;
+  }
+
+  .trend-line-chart svg {
+    height: 120px;
+  }
+
+  .trend-axis span {
+    font-size: 9px;
+  }
+
   .donut-layout {
     grid-template-columns: 100px minmax(0, 1fr);
     gap: 12px;
@@ -2893,6 +3114,16 @@ onMounted(async () => {
 
   .donut-chart strong {
     font-size: 18px;
+  }
+
+  .interest-bar-row {
+    grid-template-columns: 1fr 44px;
+    gap: 8px;
+  }
+
+  .interest-bar-track {
+    grid-column: 1 / -1;
+    grid-row: 2;
   }
 
   .tab-header {
@@ -2937,8 +3168,9 @@ onMounted(async () => {
   }
 
   .products-row-img-wrap {
-    width: 64px;
-    height: 64px;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 4 / 3;
   }
 
   .products-row-name {
@@ -2954,10 +3186,6 @@ onMounted(async () => {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
-  }
-
-  .products-row-actions .admin-btn:first-child {
-    grid-column: 1 / -1;
   }
 
   .products-row-actions .admin-btn {

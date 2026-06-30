@@ -61,7 +61,6 @@ For this project:
 
 - `apps/craft-shop/frontend/.env` is used for local frontend development.
 - `apps/craft-shop/frontend/.env.example` documents frontend variables.
-- `apps/craft-shop/.env.example` documents the app-level variables.
 
 Vercel does not automatically read your local `.env`; production values must be added in Vercel Project Settings > Environment Variables.
 
@@ -101,3 +100,4 @@ Do not delete `frontend`, `sql`, or `docs`. The placeholder `backend` and `tests
 Removed cleanup:
 
 - Old unused component files under `frontend/src/components` were removed after the active pages stopped importing them.
+- The duplicate app-level `.env.example` was removed. Keep the frontend `.env.example` as the single Vite environment template.
