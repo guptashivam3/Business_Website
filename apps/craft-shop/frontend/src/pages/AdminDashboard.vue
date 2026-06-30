@@ -217,8 +217,33 @@
                   <span>{{ filteredAnalytics.length }} events</span>
                 </div>
                 <div class="donut-layout hoverable-donut-layout">
-                  <div class="donut-chart" :style="intentDonutStyle" aria-label="Customer intent breakdown">
-                    <div>
+                  <div
+                    class="donut-chart svg-donut"
+                    aria-label="Customer intent breakdown"
+                    @mouseleave="hoveredIntentSegment = null"
+                  >
+                    <svg viewBox="0 0 120 120" role="img" aria-hidden="true">
+                      <circle class="donut-base-ring" cx="60" cy="60" r="42"></circle>
+                      <circle
+                        v-for="segment in intentDonutSegments"
+                        :key="segment.label"
+                        class="donut-slice"
+                        cx="60"
+                        cy="60"
+                        r="42"
+                        :stroke="segment.color"
+                        :stroke-dasharray="`${segment.dash} ${100 - segment.dash}`"
+                        :stroke-dashoffset="segment.offset"
+                        pathLength="100"
+                        tabindex="0"
+                        @mouseenter="hoveredIntentSegment = segment"
+                        @focus="hoveredIntentSegment = segment"
+                        @click="hoveredIntentSegment = segment"
+                      >
+                        <title>{{ segment.label }}: {{ segment.count }} events, {{ segment.percent }}%</title>
+                      </circle>
+                    </svg>
+                    <div class="donut-center">
                       <strong>{{ filteredAnalytics.length }}</strong>
                       <span>Total</span>
                     </div>
@@ -254,8 +279,33 @@
                 <div v-if="topProductSegments.length === 0" class="mini-empty">Product interest will appear after customers open product pages.</div>
                 <template v-else>
                   <div class="donut-layout top-interest-layout">
-                    <div class="donut-chart top-interest-donut" :style="topProductDonutStyle" aria-label="Top product interest breakdown">
-                      <div>
+                    <div
+                      class="donut-chart svg-donut top-interest-donut"
+                      aria-label="Top product interest breakdown"
+                      @mouseleave="hoveredTopProductSegment = null"
+                    >
+                      <svg viewBox="0 0 120 120" role="img" aria-hidden="true">
+                        <circle class="donut-base-ring" cx="60" cy="60" r="42"></circle>
+                        <circle
+                          v-for="segment in topProductDonutSegments"
+                          :key="segment.name"
+                          class="donut-slice"
+                          cx="60"
+                          cy="60"
+                          r="42"
+                          :stroke="segment.color"
+                          :stroke-dasharray="`${segment.dash} ${100 - segment.dash}`"
+                          :stroke-dashoffset="segment.offset"
+                          pathLength="100"
+                          tabindex="0"
+                          @mouseenter="hoveredTopProductSegment = segment"
+                          @focus="hoveredTopProductSegment = segment"
+                          @click="hoveredTopProductSegment = segment"
+                        >
+                          <title>{{ segment.name }}: {{ segment.total }} actions, {{ segment.percent }}%</title>
+                        </circle>
+                      </svg>
+                      <div class="donut-center">
                         <strong>{{ topProductTotal }}</strong>
                         <span>Actions</span>
                       </div>
@@ -873,6 +923,33 @@ const topProductSegments = computed(() => {
 })
 
 const topProductDonutStyle = computed(() => ({ background: donutGradient(topProductSegments.value.map((segment) => ({ ...segment, count: segment.total, label: segment.name }))) }))
+
+const intentDonutSegments = computed(() => buildSvgDonutSegments(
+  intentSegments.value.map((segment) => ({ ...segment, value: segment.count }))
+))
+
+const topProductDonutSegments = computed(() => buildSvgDonutSegments(
+  topProductSegments.value.map((segment) => ({ ...segment, value: segment.total }))
+))
+
+function buildSvgDonutSegments(segments) {
+  const total = Math.max(1, segments.reduce((sum, segment) => sum + Number(segment.value || 0), 0))
+  let offset = 25
+  return segments
+    .filter((segment) => Number(segment.value || 0) > 0)
+    .map((segment) => {
+      const value = Number(segment.value || 0)
+      const dash = (value / total) * 100
+      const next = {
+        ...segment,
+        percent: Math.round((value / total) * 100),
+        dash,
+        offset
+      }
+      offset -= dash
+      return next
+    })
+}
 
 const recentWhatsappEnquiries = computed(() => {
   return filteredAnalytics.value
@@ -2226,9 +2303,50 @@ onMounted(async () => {
   height: 120px;
   border-radius: 50%;
   box-shadow: inset 0 0 0 1px rgba(65, 42, 24, 0.08), 0 14px 28px rgba(65, 42, 24, 0.08);
+  position: relative;
 }
 
-.donut-chart > div {
+.svg-donut {
+  background: #f3eadf;
+}
+
+.svg-donut svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.donut-base-ring,
+.donut-slice {
+  fill: none;
+  stroke-width: 22;
+}
+
+.donut-base-ring {
+  stroke: #eadfd2;
+}
+
+.donut-slice {
+  cursor: pointer;
+  outline: none;
+  transition: stroke-width 140ms ease, opacity 140ms ease, filter 140ms ease;
+}
+
+.donut-slice:hover,
+.donut-slice:focus-visible {
+  stroke-width: 26;
+  filter: drop-shadow(0 6px 10px rgba(65, 42, 24, 0.22));
+}
+
+.donut-center {
+  position: relative;
+  z-index: 2;
+}
+
+.donut-chart > div,
+.donut-center {
   display: grid;
   place-items: center;
   width: 72px;
@@ -2598,7 +2716,7 @@ onMounted(async () => {
 
 /* ============ product/gallery card shared UI ============ */
 .products-admin-grid {
-  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
 }
 
 .product-admin-card.sold {
@@ -2606,7 +2724,8 @@ onMounted(async () => {
 }
 
 .product-admin-img-wrap {
-  min-height: 220px;
+  min-height: 0;
+  aspect-ratio: 1 / 1;
 }
 
 .product-missing-image {
@@ -3309,7 +3428,8 @@ onMounted(async () => {
   height: 132px;
 }
 
-.top-interest-donut > div {
+.top-interest-donut > div,
+.top-interest-donut .donut-center {
   width: 76px;
   height: 76px;
 }
@@ -3596,7 +3716,8 @@ onMounted(async () => {
     height: 100px;
   }
 
-  .donut-chart > div {
+  .donut-chart > div,
+.donut-center {
     width: 62px;
     height: 62px;
   }
@@ -3690,7 +3811,8 @@ onMounted(async () => {
   }
 
   .products-admin-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
   }
 
   .gallery-admin-card {
@@ -3716,6 +3838,69 @@ onMounted(async () => {
   .gallery-admin-actions .admin-btn {
     min-height: 36px;
     font-size: 12px;
+  }
+
+
+  .products-admin-grid .gallery-admin-card,
+  .gallery-admin-grid .gallery-admin-card {
+    border-radius: 16px;
+  }
+
+  .product-admin-card .gallery-admin-body {
+    min-height: 122px;
+  }
+
+  .product-admin-body .gallery-admin-name {
+    display: -webkit-box;
+    min-height: 34px;
+    overflow: hidden;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+
+  .product-card-meta {
+    gap: 7px;
+  }
+
+  .product-admin-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .product-admin-actions .admin-btn {
+    min-height: 34px;
+    padding: 7px 6px;
+    font-size: 10.5px;
+    line-height: 1.15;
+  }
+
+  .top-interest-layout,
+  .hoverable-donut-layout {
+    grid-template-columns: 1fr;
+    justify-items: center;
+  }
+
+  .top-interest-legend,
+  .hoverable-legend {
+    width: 100%;
+  }
+
+  .donut-legend-row {
+    grid-template-columns: 10px minmax(0, 1fr) auto;
+    border-color: var(--line);
+    border-radius: 16px;
+    padding: 9px 10px;
+  }
+
+  .donut-legend-row span,
+  .top-product-row span {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: unset;
+    line-height: 1.2;
+  }
+
+  .analytics-hover-card {
+    font-size: 13px;
   }
 
   .settings-panel {
@@ -3791,65 +3976,3 @@ onMounted(async () => {
   }
 }
 </style>
-
-
-@media (max-width: 560px) {
-  .customer-trend-summary {
-    grid-template-columns: 1fr;
-  }
-
-  .customer-trend-bars {
-    gap: 5px;
-    min-height: 170px;
-    padding-inline: 8px;
-  }
-
-  .customer-trend-bar-wrap {
-    height: 112px;
-  }
-
-  .customer-trend-label:nth-of-type(n) {
-    font-size: 9px;
-  }
-
-  .customer-trend-day:nth-child(even) .customer-trend-label {
-    opacity: 0;
-  }
-
-  .top-interest-layout,
-  .hoverable-donut-layout {
-    grid-template-columns: 1fr;
-    justify-items: center;
-  }
-
-  .top-interest-legend,
-  .hoverable-legend {
-    width: 100%;
-  }
-
-  .products-admin-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    gap: 12px;
-  }
-
-  .product-admin-img-wrap {
-    min-height: 0;
-    aspect-ratio: 1 / 1;
-  }
-
-  .product-card-price {
-    font-size: 16px;
-  }
-
-  .product-badges .badge {
-    font-size: 9px;
-    padding: 4px 7px;
-  }
-
-  .product-admin-actions .admin-btn {
-    min-height: 36px;
-    padding: 7px 8px;
-    font-size: 11px;
-    white-space: normal;
-  }
-}
