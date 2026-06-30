@@ -113,8 +113,8 @@
       </div>
     </div>
 
-    <section class="gallery-cta container" v-reveal>
-      <div class="gallery-cta-card">
+    <section class="gallery-cta" v-reveal>
+      <div class="container gallery-cta-inner">
         <p class="section-label">Liked what you saw?</p>
         <h2 class="gallery-cta-title">We can make it for you</h2>
         <p class="gallery-cta-sub">Custom orders are welcome. Share your idea and we will confirm details on WhatsApp.</p>
@@ -743,34 +743,45 @@ async function loadSiteSettings() {
 }
 
 .gallery-cta {
-  padding-bottom: 64px;
+  padding: 44px 0;
+  background: #261f1a;
 }
 
-.gallery-cta-card {
-  padding: 38px;
-  border: 1px solid #eadfd2;
-  border-radius: 24px;
-  background: #fff3e4;
-  text-align: center;
-  box-shadow: 0 18px 50px rgba(65, 42, 24, 0.09);
+.gallery-cta-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.gallery-cta-inner > p,
+.gallery-cta-inner > h2 {
+  flex: 1 1 100%;
+}
+
+.gallery-cta-inner .section-label {
+  margin-bottom: -8px;
+  color: #d7b981;
 }
 
 .gallery-cta-title {
-  margin: 0 0 10px;
-  color: #241f1a;
-  font-size: clamp(30px, 5vw, 48px);
+  max-width: 760px;
+  margin: 0;
+  color: #ffffff;
+  font-size: clamp(30px, 5vw, 44px);
 }
 
 .gallery-cta-sub {
   max-width: 520px;
-  margin: 0 auto 22px;
-  color: #77695f;
-  line-height: 1.7;
+  margin: 0;
+  color: #b5aaa1;
+  line-height: 1.65;
 }
 
 .gallery-cta-btns {
   display: flex;
-  justify-content: center;
+  justify-content: flex-end;
   gap: 12px;
   flex-wrap: wrap;
 }
@@ -982,8 +993,17 @@ async function loadSiteSettings() {
     font-size: 22px;
   }
 
-  .gallery-cta-card {
-    padding: 26px 18px;
+  .gallery-cta {
+    padding: 36px 0;
+  }
+
+  .gallery-cta-inner {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .gallery-cta-btns {
+    justify-content: flex-start;
   }
 
   .footer-inner {
