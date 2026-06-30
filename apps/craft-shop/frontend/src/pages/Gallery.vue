@@ -24,8 +24,8 @@
     <section class="gallery-social container" v-reveal="{ delay: 70 }">
       <SocialFollowCard
         label="More ideas"
-        title="Like these designs?"
-        text="Follow us for more inspiration, custom work, and fresh handmade pieces."
+        title="Follow for ideas"
+        text="More inspiration, custom work, and fresh handmade pieces."
         instagram-url="laxmi_creations"
         source="gallery_social_card"
       />

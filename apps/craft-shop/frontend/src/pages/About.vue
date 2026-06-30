@@ -81,14 +81,6 @@
             <p class="about-label">Contact</p>
             <h2>Have an idea for a gift?</h2>
             <p>Share the occasion, budget, preferred colors, and delivery date. {{ siteSettings.owner_name }} will confirm what can be made.</p>
-            <SocialFollowCard
-              class="about-social-card"
-              label="Connect with us"
-              title="Follow our handmade journey"
-              text="See latest creations, custom order ideas, festive work, and behind-the-scenes updates."
-              :instagram-url="instagramLink"
-              source="about_social_card"
-            />
           </div>
           <div class="contact-cards">
             <a :href="`tel:${ownerPhone}`" class="contact-card">
@@ -118,7 +110,6 @@
 
 <script setup>
 import { computed, onMounted, reactive } from 'vue'
-import SocialFollowCard from '../components/SocialFollowCard.vue'
 import { supabase } from '../lib/supabase.js'
 import { makeWhatsAppLink, trackEvent } from '../lib/analytics.js'
 
@@ -419,10 +410,6 @@ async function loadSiteSettings() {
 
 .contact-inner p {
   color: #c8bdb3;
-}
-
-.about-social-card {
-  margin-top: 24px;
 }
 
 .contact-cards {

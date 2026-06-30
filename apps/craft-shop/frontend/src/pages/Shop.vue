@@ -50,8 +50,8 @@
 
     <section class="social-section container" v-reveal="{ delay: 70 }">
       <SocialFollowCard
-        title="Follow Laxmi Creations"
-        text="See new designs, custom orders, festive hampers, and latest handmade updates."
+        title="Follow us"
+        text="New designs, custom orders, festive hampers, and updates."
         :instagram-url="instagramLink"
         source="shop_social_card"
       />

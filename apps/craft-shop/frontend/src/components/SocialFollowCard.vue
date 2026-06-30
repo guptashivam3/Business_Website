@@ -1,9 +1,11 @@
 <template>
   <section class="social-follow-card" aria-label="Follow Laxmi Creations on social media">
     <div class="social-copy">
-      <p class="social-label">{{ label }}</p>
-      <h2>{{ title }}</h2>
-      <p>{{ text }}</p>
+      <span class="social-label">{{ label }}</span>
+      <p>
+        <strong>{{ title }}</strong>
+        <span>{{ text }}</span>
+      </p>
     </div>
     <div class="social-actions">
       <a
@@ -101,23 +103,23 @@ function trackSocial(platform) {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  padding: 14px 16px;
+  gap: 14px;
+  padding: 10px 12px;
   border: 1px solid rgba(216, 200, 184, 0.95);
-  border-radius: 18px;
-  background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.82), rgba(255, 250, 244, 0.64)),
-    radial-gradient(circle at 100% 0%, rgba(184, 92, 56, 0.08), transparent 10rem);
-  box-shadow: 0 12px 28px rgba(83, 58, 35, 0.05);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: 0 10px 24px rgba(83, 58, 35, 0.04);
 }
 
 .social-copy {
-  display: grid;
-  gap: 3px;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 10px;
 }
 
 .social-label {
-  margin: 0;
+  flex: 0 0 auto;
   color: #79401f;
   font-size: 10px;
   font-weight: 900;
@@ -125,25 +127,35 @@ function trackSocial(platform) {
   text-transform: uppercase;
 }
 
-.social-copy h2 {
+.social-copy p {
+  display: flex;
+  align-items: baseline;
+  min-width: 0;
+  gap: 8px;
   margin: 0;
-  color: #241f1a;
-  font-size: clamp(17px, 1.7vw, 21px);
-  line-height: 1.12;
 }
 
-.social-copy p:last-child {
-  max-width: 560px;
-  margin: 0;
+.social-copy strong {
+  flex: 0 0 auto;
+  color: #241f1a;
+  font-size: 14px;
+  line-height: 1.2;
+}
+
+.social-copy p span {
+  min-width: 0;
   color: #77695f;
   font-size: 13px;
-  line-height: 1.45;
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .social-actions {
   display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
+  flex: 0 0 auto;
+  gap: 8px;
 }
 
 .social-btn {
@@ -151,12 +163,12 @@ function trackSocial(platform) {
   align-items: center;
   justify-content: center;
   gap: 7px;
-  min-height: 44px;
-  padding: 0 14px;
+  min-height: 36px;
+  padding: 0 12px;
   border-radius: 999px;
   border: 1px solid #d8c8b8;
   color: #241f1a;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 900;
   text-decoration: none;
   transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
@@ -203,32 +215,37 @@ function trackSocial(platform) {
 
 @media (max-width: 700px) {
   .social-follow-card {
-    gap: 12px;
-    padding: 13px;
-    border-radius: 16px;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 10px;
   }
 
-  .social-actions {
-    flex: 0 0 auto;
+  .social-copy {
+    display: grid;
+    gap: 2px;
   }
 
-  .social-btn {
-    min-height: 40px;
-    padding: 0 12px;
+  .social-copy p {
+    display: block;
+  }
+
+  .social-copy p span {
+    display: none;
   }
 }
   
 @media (max-width: 420px) {
-  .social-follow-card {
-    align-items: flex-start;
+  .social-label {
+    font-size: 9px;
   }
 
-  .social-copy p:last-child {
-    display: none;
+  .social-copy strong {
+    font-size: 13px;
   }
 
-  .social-actions {
-    justify-content: flex-end;
+  .social-btn {
+    min-height: 34px;
+    padding: 0 10px;
   }
 }
 </style>
