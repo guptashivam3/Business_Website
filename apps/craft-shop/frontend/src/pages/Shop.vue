@@ -48,15 +48,6 @@
       </div>
     </section>
 
-    <section class="social-section container" v-reveal="{ delay: 70 }">
-      <SocialFollowCard
-        title="Follow us"
-        text="New designs, custom orders, festive hampers, and updates."
-        :instagram-url="instagramLink"
-        source="shop_social_card"
-      />
-    </section>
-
     <section class="promise-section container" v-reveal="{ delay: 80 }">
       <div class="promise-card primary">
         <p class="section-label">Made personally</p>
@@ -258,7 +249,6 @@
 
 <script setup>
 import { computed, onMounted, onUnmounted, reactive, ref } from 'vue'
-import SocialFollowCard from '../components/SocialFollowCard.vue'
 import { supabase } from '../lib/supabase.js'
 import { makeWhatsAppLink, trackEvent } from '../lib/analytics.js'
 
@@ -651,10 +641,6 @@ async function loadSiteSettings() {
   color: #77695f;
   font-size: 12px;
   font-weight: 800;
-}
-
-.social-section {
-  padding: 16px 0 0;
 }
 
 .featured-slide-enter-active,
@@ -1283,8 +1269,11 @@ async function loadSiteSettings() {
 }
 
 .footer {
-  padding: 32px 0 18px;
-  background: #1a1714;
+  padding: 34px 0 20px;
+  border-top: 1px solid #eadfd2;
+  background:
+    radial-gradient(circle at 15% 0%, rgba(184, 92, 56, 0.1), transparent 28rem),
+    linear-gradient(180deg, #fffaf4 0%, #f3e7da 100%);
 }
 
 .footer-inner {
@@ -1294,7 +1283,7 @@ async function loadSiteSettings() {
   gap: 18px;
   flex-wrap: wrap;
   padding-bottom: 18px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid #e1d2c2;
 }
 
 .footer-brand {
@@ -1303,13 +1292,13 @@ async function loadSiteSettings() {
 }
 
 .footer-name {
-  color: #ffffff;
+  color: #241f1a;
   font-weight: 900;
 }
 
 .footer-tagline,
 .footer-copy {
-  color: #7a7068;
+  color: #77695f;
   font-size: 13px;
 }
 
@@ -1322,14 +1311,14 @@ async function loadSiteSettings() {
 
 .footer-links a {
   border-radius: 999px;
-  color: #b5aaa1;
+  color: #6f6258;
   font-weight: 800;
   transition: color 160ms ease, background 160ms ease;
 }
 
 .footer-links a:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: #ffffff;
+  background: rgba(168, 95, 51, 0.09);
+  color: #79401f;
 }
 
 .footer-links .footer-contact-link:hover {
@@ -1351,7 +1340,7 @@ async function loadSiteSettings() {
   width: 25px;
   height: 25px;
   border-radius: 999px;
-  background-color: #ffffff;
+  background-color: #79401f;
   opacity: 0.92;
   -webkit-mask-position: center;
   -webkit-mask-repeat: no-repeat;

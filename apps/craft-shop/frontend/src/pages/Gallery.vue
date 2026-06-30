@@ -21,16 +21,6 @@
       </p>
     </section>
 
-    <section class="gallery-social container" v-reveal="{ delay: 70 }">
-      <SocialFollowCard
-        label="More ideas"
-        title="Follow for ideas"
-        text="More inspiration, custom work, and fresh handmade pieces."
-        instagram-url="laxmi_creations"
-        source="gallery_social_card"
-      />
-    </section>
-
     <main class="gallery-body container" v-reveal="{ delay: 90 }">
       <div v-if="loading" class="loading-wrap">
         <div class="spinner"></div>
@@ -134,12 +124,32 @@
         </div>
       </div>
     </section>
+
+    <footer class="footer">
+      <div class="container footer-inner">
+        <div class="footer-brand">
+          <span class="footer-name">{{ shopName }}</span>
+          <span class="footer-tagline">Inspiration gallery for custom handmade work.</span>
+        </div>
+        <div class="footer-links">
+          <RouterLink to="/">Shop</RouterLink>
+          <RouterLink to="/about">About Us</RouterLink>
+          <a :href="customIdeaLink" target="_blank" rel="noopener" @click="trackCustomIdea">WhatsApp</a>
+          <a :href="`mailto:${ownerEmail}`" class="footer-contact-link">
+            <span class="footer-icon email" aria-hidden="true"></span>{{ ownerEmail }}
+          </a>
+          <a :href="instagramLink" target="_blank" rel="noopener" class="footer-contact-link">
+            <span class="footer-icon instagram" aria-hidden="true"></span>{{ instagramHandle }}
+          </a>
+        </div>
+      </div>
+      <p class="footer-copy">Copyright {{ currentYear }} {{ shopName }}. All rights reserved.</p>
+    </footer>
   </div>
 </template>
 
 <script setup>
-import { computed, onMounted, onUnmounted, ref } from 'vue'
-import SocialFollowCard from '../components/SocialFollowCard.vue'
+import { computed, onMounted, onUnmounted, reactive, ref } from 'vue'
 import { supabase } from '../lib/supabase.js'
 import { makeWhatsAppLink, trackEvent } from '../lib/analytics.js'
 
@@ -148,9 +158,17 @@ const items = ref([])
 const loading = ref(true)
 const lightboxItem = ref(null)
 const activeLightboxImage = ref('')
+const currentYear = new Date().getFullYear()
+const siteSettings = reactive({
+  owner_email: 'laxmigupta8888@gmail.com',
+  owner_instagram: 'laxmi_creations'
+})
 
 const lightboxImages = computed(() => (lightboxItem.value ? galleryImages(lightboxItem.value) : []))
 const activeLightboxIndex = computed(() => Math.max(0, lightboxImages.value.indexOf(activeLightboxImage.value)))
+const ownerEmail = computed(() => siteSettings.owner_email || 'laxmigupta8888@gmail.com')
+const instagramHandle = computed(() => cleanInstagramHandle(siteSettings.owner_instagram || 'laxmi_creations'))
+const instagramLink = computed(() => `https://www.instagram.com/${instagramHandle.value.replace('@', '')}`)
 
 const customIdeaLink = computed(() => {
   const message = 'Namaste Laxmi ji,\n\nI saw your gallery and have a custom handmade order idea.\n\nPlease help me plan the design, budget, timeline, and delivery details.'
@@ -222,11 +240,19 @@ function showPreviousImage() {
   activeLightboxImage.value = lightboxImages.value[nextIndex]
 }
 
+function cleanInstagramHandle(value) {
+  const handle = String(value || '').trim().replace(/^https?:\/\/(www\.)?instagram\.com\//, '').replace(/\/$/, '')
+  return handle.startsWith('@') ? handle : `@${handle}`
+}
+
 onUnmounted(() => {
   document.body.style.overflow = ''
 })
 
-onMounted(loadGallery)
+onMounted(() => {
+  loadGallery()
+  loadSiteSettings()
+})
 
 async function loadGallery() {
   loading.value = true
@@ -239,6 +265,11 @@ async function loadGallery() {
   if (error) console.error(error)
   items.value = data || []
   loading.value = false
+}
+
+async function loadSiteSettings() {
+  const { data, error } = await supabase.from('site_settings').select('owner_email, owner_instagram').eq('id', 'about').maybeSingle()
+  if (!error && data) Object.assign(siteSettings, data)
 }
 </script>
 
@@ -340,10 +371,6 @@ async function loadGallery() {
 
 .gallery-hero {
   padding: 46px 0 22px;
-}
-
-.gallery-social {
-  padding: 0 0 18px;
 }
 
 .section-label {
@@ -748,6 +775,99 @@ async function loadGallery() {
   flex-wrap: wrap;
 }
 
+.footer {
+  padding: 34px 0 20px;
+  border-top: 1px solid #eadfd2;
+  background:
+    radial-gradient(circle at 15% 0%, rgba(184, 92, 56, 0.1), transparent 28rem),
+    linear-gradient(180deg, #fffaf4 0%, #f3e7da 100%);
+}
+
+.footer-inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+  padding-bottom: 18px;
+  border-bottom: 1px solid #e1d2c2;
+}
+
+.footer-brand {
+  display: grid;
+  gap: 4px;
+}
+
+.footer-name {
+  color: #241f1a;
+  font-weight: 900;
+}
+
+.footer-tagline,
+.footer-copy {
+  color: #77695f;
+  font-size: 13px;
+}
+
+.footer-links {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.footer-links a {
+  border-radius: 999px;
+  color: #6f6258;
+  font-weight: 800;
+  transition: color 160ms ease, background 160ms ease;
+}
+
+.footer-links a:hover {
+  background: rgba(168, 95, 51, 0.09);
+  color: #79401f;
+}
+
+.footer-links .footer-contact-link:hover {
+  background: transparent;
+}
+
+.footer-contact-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.footer-icon {
+  display: inline-block;
+  width: 25px;
+  height: 25px;
+  border-radius: 999px;
+  background-color: #79401f;
+  opacity: 0.92;
+  -webkit-mask-position: center;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-size: 19px 19px;
+  mask-position: center;
+  mask-repeat: no-repeat;
+  mask-size: 19px 19px;
+}
+
+.footer-icon.email {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M4 5h16c1.1 0 2 .9 2 2v10c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V7c0-1.1.9-2 2-2Zm0 3.2V17h16V8.2l-8 5.2-8-5.2Zm1.2-1.2 6.8 4.4L18.8 7H5.2Z'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M4 5h16c1.1 0 2 .9 2 2v10c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V7c0-1.1.9-2 2-2Zm0 3.2V17h16V8.2l-8 5.2-8-5.2Zm1.2-1.2 6.8 4.4L18.8 7H5.2Z'/%3E%3C/svg%3E");
+}
+
+.footer-icon.instagram {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M7.8 2h8.4A5.8 5.8 0 0 1 22 7.8v8.4a5.8 5.8 0 0 1-5.8 5.8H7.8A5.8 5.8 0 0 1 2 16.2V7.8A5.8 5.8 0 0 1 7.8 2Zm0 2A3.8 3.8 0 0 0 4 7.8v8.4A3.8 3.8 0 0 0 7.8 20h8.4a3.8 3.8 0 0 0 3.8-3.8V7.8A3.8 3.8 0 0 0 16.2 4H7.8Zm8.8 2.3a1.1 1.1 0 1 1 0 2.2 1.1 1.1 0 0 1 0-2.2ZM12 7.2a4.8 4.8 0 1 1 0 9.6 4.8 4.8 0 0 1 0-9.6Zm0 2a2.8 2.8 0 1 0 0 5.6 2.8 2.8 0 0 0 0-5.6Z'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M7.8 2h8.4A5.8 5.8 0 0 1 22 7.8v8.4a5.8 5.8 0 0 1-5.8 5.8H7.8A5.8 5.8 0 0 1 2 16.2V7.8A5.8 5.8 0 0 1 7.8 2Zm0 2A3.8 3.8 0 0 0 4 7.8v8.4A3.8 3.8 0 0 0 7.8 20h8.4a3.8 3.8 0 0 0 3.8-3.8V7.8A3.8 3.8 0 0 0 16.2 4H7.8Zm8.8 2.3a1.1 1.1 0 1 1 0 2.2 1.1 1.1 0 0 1 0-2.2ZM12 7.2a4.8 4.8 0 1 1 0 9.6 4.8 4.8 0 0 1 0-9.6Zm0 2a2.8 2.8 0 1 0 0 5.6 2.8 2.8 0 0 0 0-5.6Z'/%3E%3C/svg%3E");
+}
+
+.footer-copy {
+  margin: 16px 0 0;
+  text-align: center;
+}
+
 @media (max-width: 820px) {
   .gallery-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -864,6 +984,15 @@ async function loadGallery() {
 
   .gallery-cta-card {
     padding: 26px 18px;
+  }
+
+  .footer-inner {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .footer-links {
+    gap: 12px;
   }
 }
 
