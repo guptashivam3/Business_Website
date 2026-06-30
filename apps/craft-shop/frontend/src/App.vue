@@ -48,7 +48,9 @@ const whatsAppLink = computed(() => {
 })
 
 function markWhatsAppActive() {
-  trackEvent('whatsapp_click', { source: 'mobile_action_bar', page_path: route.fullPath })
+  if (!route.path.startsWith('/admin')) {
+    trackEvent('whatsapp_click', { source: 'mobile_action_bar', page_path: route.fullPath })
+  }
   whatsAppActive.value = true
   clearTimeout(whatsAppTimer)
   whatsAppTimer = setTimeout(() => {
@@ -61,7 +63,9 @@ watch(
   (path) => {
     whatsAppActive.value = false
     clearTimeout(whatsAppTimer)
-    trackEvent('page_view', { page_path: path, source: 'router' })
+    if (!path.startsWith('/admin')) {
+      trackEvent('page_view', { page_path: path, source: 'router' })
+    }
   },
   {
     immediate: true

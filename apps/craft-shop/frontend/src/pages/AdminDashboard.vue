@@ -61,7 +61,15 @@
             <h2 class="tab-title">Dashboard Analytics</h2>
             <p class="tab-sub">Track visitor interest, product views, and WhatsApp order clicks.</p>
           </div>
-          <button class="admin-btn outline small" type="button" @click="loadAnalytics">Refresh</button>
+          <div class="tab-actions">
+            <div class="range-toggle" aria-label="Analytics date range">
+              <button :class="{ active: analyticsRange === 7 }" type="button" @click="analyticsRange = 7">7D</button>
+              <button :class="{ active: analyticsRange === 30 }" type="button" @click="analyticsRange = 30">30D</button>
+              <button :class="{ active: analyticsRange === 90 }" type="button" @click="analyticsRange = 90">90D</button>
+              <button :class="{ active: analyticsRange === 'all' }" type="button" @click="analyticsRange = 'all'">All</button>
+            </div>
+            <button class="admin-btn outline small" type="button" @click="loadAnalytics">Refresh</button>
+          </div>
         </div>
 
         <div v-if="analyticsError" class="empty-state compact">
@@ -85,7 +93,7 @@
             <div class="analytics-card">
               <span>WhatsApp Clicks</span>
               <strong>{{ whatsappClickCount }}</strong>
-              <p>Order or enquiry starts</p>
+              <p>{{ conversionRate }}% of product views</p>
             </div>
             <div class="analytics-card">
               <span>Gallery Interest</span>
@@ -94,7 +102,45 @@
             </div>
           </div>
 
-          <div class="analytics-panels">
+          <div class="analytics-panels pro">
+            <section class="analytics-panel chart-panel wide">
+              <div class="panel-heading">
+                <h3>Activity Trend</h3>
+                <span>{{ analyticsRangeLabel }}</span>
+              </div>
+              <div class="trend-chart" aria-label="Daily activity chart">
+                <div v-for="day in dailyTrend" :key="day.label" class="trend-day">
+                  <div class="trend-bar-stack">
+                    <span class="trend-page" :style="{ height: `${day.pagePercent}%` }"></span>
+                    <span class="trend-product" :style="{ height: `${day.productPercent}%` }"></span>
+                    <span class="trend-whatsapp" :style="{ height: `${day.whatsappPercent}%` }"></span>
+                  </div>
+                  <small>{{ day.label }}</small>
+                </div>
+              </div>
+              <div class="chart-legend">
+                <span><i class="legend-dot page"></i>Page views</span>
+                <span><i class="legend-dot product"></i>Product views</span>
+                <span><i class="legend-dot whatsapp"></i>WhatsApp clicks</span>
+              </div>
+            </section>
+
+            <section class="analytics-panel funnel-panel">
+              <div class="panel-heading">
+                <h3>Customer Funnel</h3>
+                <span>Intent path</span>
+              </div>
+              <div class="funnel-list">
+                <div v-for="step in funnelStats" :key="step.label" class="funnel-row">
+                  <div>
+                    <strong>{{ step.count }}</strong>
+                    <span>{{ step.label }}</span>
+                  </div>
+                  <div class="bar-track"><span :style="{ width: `${step.percent}%` }"></span></div>
+                </div>
+              </div>
+            </section>
+
             <section class="analytics-panel">
               <div class="panel-heading">
                 <h3>Top Product Interest</h3>
@@ -105,7 +151,7 @@
                 <div v-for="item in topProducts" :key="item.name" class="bar-row">
                   <div>
                     <strong>{{ item.name }}</strong>
-                    <span>{{ item.views }} views · {{ item.clicks }} WhatsApp clicks</span>
+                    <span>{{ item.views }} views / {{ item.clicks }} WhatsApp clicks</span>
                   </div>
                   <div class="bar-track"><span :style="{ width: `${item.percent}%` }"></span></div>
                 </div>
@@ -115,13 +161,13 @@
             <section class="analytics-panel">
               <div class="panel-heading">
                 <h3>Most Visited Pages</h3>
-                <span>Last {{ analyticsEvents.length }} events</span>
+                <span>{{ filteredAnalytics.length }} events</span>
               </div>
               <div v-if="topPages.length === 0" class="mini-empty">No page views yet.</div>
               <div v-else class="bar-list compact">
                 <div v-for="page in topPages" :key="page.name" class="bar-row">
                   <div>
-                    <strong>{{ page.name }}</strong>
+                    <strong>{{ page.label }}</strong>
                     <span>{{ page.count }} visits</span>
                   </div>
                   <div class="bar-track"><span :style="{ width: `${page.percent}%` }"></span></div>
@@ -129,7 +175,7 @@
               </div>
             </section>
 
-            <section class="analytics-panel wide">
+            <section class="analytics-panel wide recent-panel">
               <div class="panel-heading">
                 <h3>Recent Activity</h3>
                 <span>Latest customer actions</span>
@@ -138,7 +184,7 @@
               <div v-else class="activity-list">
                 <div v-for="event in recentAnalytics" :key="event.id" class="activity-row">
                   <span class="activity-type">{{ formatEventType(event.event_type) }}</span>
-                  <strong>{{ event.product_name || event.metadata?.title || event.page_path || 'Website' }}</strong>
+                  <strong>{{ eventDisplayName(event) }}</strong>
                   <time>{{ formatEventTime(event.created_at) }}</time>
                 </div>
               </div>
@@ -526,6 +572,7 @@ const loadingProducts = ref(true)
 const loadingGallery = ref(true)
 const loadingAnalytics = ref(true)
 const analyticsError = ref('')
+const analyticsRange = ref(30)
 const productSearch = ref('')
 const productFilter = ref('all')
 const gallerySearch = ref('')
@@ -561,17 +608,31 @@ const soldOutProducts = computed(() => products.value.filter((product) => !produ
 const featuredProducts = computed(() => products.value.filter((product) => product.is_featured).length)
 const visibleGalleryItems = computed(() => galleryItems.value.filter((item) => item.is_visible).length)
 const hiddenGalleryItems = computed(() => galleryItems.value.filter((item) => !item.is_visible).length)
-const pageViewCount = computed(() => analyticsEvents.value.filter((event) => event.event_type === 'page_view').length)
-const productViewCount = computed(() => analyticsEvents.value.filter((event) => event.event_type === 'product_view').length)
-const whatsappClickCount = computed(() => analyticsEvents.value.filter((event) => event.event_type === 'whatsapp_click' || event.event_type === 'custom_order_click').length)
-const galleryInterestCount = computed(() => analyticsEvents.value.filter((event) => event.event_type === 'gallery_view' || event.event_type === 'custom_order_click').length)
+
+const filteredAnalytics = computed(() => {
+  const customerEvents = analyticsEvents.value.filter(isCustomerEvent)
+  if (analyticsRange.value === 'all') return customerEvents
+  const cutoff = Date.now() - Number(analyticsRange.value) * 24 * 60 * 60 * 1000
+  return customerEvents.filter((event) => new Date(event.created_at).getTime() >= cutoff)
+})
+
+const analyticsRangeLabel = computed(() => (analyticsRange.value === 'all' ? 'All tracked activity' : `Last ${analyticsRange.value} days`))
+const pageViewCount = computed(() => filteredAnalytics.value.filter((event) => event.event_type === 'page_view').length)
+const productViewCount = computed(() => filteredAnalytics.value.filter((event) => event.event_type === 'product_view').length)
+const whatsappClickCount = computed(() => filteredAnalytics.value.filter((event) => event.event_type === 'whatsapp_click' || event.event_type === 'custom_order_click').length)
+const galleryInterestCount = computed(() => filteredAnalytics.value.filter((event) => event.event_type === 'gallery_view' || event.event_type === 'custom_order_click').length)
+const conversionRate = computed(() => {
+  if (!productViewCount.value) return 0
+  return Math.round((whatsappClickCount.value / productViewCount.value) * 100)
+})
 
 const topProducts = computed(() => {
   const grouped = new Map()
-  analyticsEvents.value
+  filteredAnalytics.value
     .filter((event) => event.product_name || event.product_id)
     .forEach((event) => {
-      const name = event.product_name || 'Unnamed product'
+      const name = cleanAnalyticsName(event.product_name || event.metadata?.title || 'Unnamed product')
+      if (name === 'Unnamed product') return
       const current = grouped.get(name) || { name, views: 0, clicks: 0, total: 0 }
       if (event.event_type === 'product_view') current.views += 1
       if (event.event_type === 'whatsapp_click') current.clicks += 1
@@ -579,23 +640,66 @@ const topProducts = computed(() => {
       grouped.set(name, current)
     })
 
-  const list = Array.from(grouped.values()).sort((a, b) => b.total - a.total).slice(0, 6)
+  const list = Array.from(grouped.values()).sort((a, b) => b.total - a.total).slice(0, 5)
   const max = Math.max(1, ...list.map((item) => item.total))
   return list.map((item) => ({ ...item, percent: Math.max(8, Math.round((item.total / max) * 100)) }))
 })
 
 const topPages = computed(() => {
   const grouped = new Map()
-  analyticsEvents.value
+  filteredAnalytics.value
     .filter((event) => event.event_type === 'page_view' && event.page_path)
-    .forEach((event) => grouped.set(event.page_path, (grouped.get(event.page_path) || 0) + 1))
+    .forEach((event) => {
+      const key = normalizePagePath(event.page_path)
+      grouped.set(key, (grouped.get(key) || 0) + 1)
+    })
 
-  const list = Array.from(grouped, ([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count).slice(0, 6)
+  const list = Array.from(grouped, ([name, count]) => ({ name, label: pageLabel(name), count })).sort((a, b) => b.count - a.count).slice(0, 5)
   const max = Math.max(1, ...list.map((item) => item.count))
   return list.map((item) => ({ ...item, percent: Math.max(8, Math.round((item.count / max) * 100)) }))
 })
 
-const recentAnalytics = computed(() => analyticsEvents.value.slice(0, 10))
+const dailyTrend = computed(() => {
+  const daysToShow = analyticsRange.value === 'all' ? 14 : Math.min(Number(analyticsRange.value), 30)
+  const buckets = Array.from({ length: daysToShow }, (_, index) => {
+    const date = new Date()
+    date.setHours(0, 0, 0, 0)
+    date.setDate(date.getDate() - (daysToShow - index - 1))
+    const key = date.toISOString().slice(0, 10)
+    return { key, label: date.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }), page: 0, product: 0, whatsapp: 0, total: 0 }
+  })
+  const byKey = new Map(buckets.map((day) => [day.key, day]))
+
+  filteredAnalytics.value.forEach((event) => {
+    const key = new Date(event.created_at).toISOString().slice(0, 10)
+    const day = byKey.get(key)
+    if (!day) return
+    if (event.event_type === 'page_view') day.page += 1
+    if (event.event_type === 'product_view') day.product += 1
+    if (event.event_type === 'whatsapp_click' || event.event_type === 'custom_order_click') day.whatsapp += 1
+    day.total += 1
+  })
+
+  const max = Math.max(1, ...buckets.map((day) => day.total))
+  return buckets.map((day) => ({
+    ...day,
+    pagePercent: day.page ? Math.max(8, Math.round((day.page / max) * 100)) : 0,
+    productPercent: day.product ? Math.max(8, Math.round((day.product / max) * 100)) : 0,
+    whatsappPercent: day.whatsapp ? Math.max(8, Math.round((day.whatsapp / max) * 100)) : 0
+  }))
+})
+
+const funnelStats = computed(() => {
+  const max = Math.max(1, pageViewCount.value, productViewCount.value, whatsappClickCount.value)
+  return [
+    { label: 'Website visits', count: pageViewCount.value },
+    { label: 'Product detail views', count: productViewCount.value },
+    { label: 'WhatsApp order/enquiry starts', count: whatsappClickCount.value },
+    { label: 'Gallery custom-order interest', count: galleryInterestCount.value }
+  ].map((step) => ({ ...step, percent: Math.max(6, Math.round((step.count / max) * 100)) }))
+})
+
+const recentAnalytics = computed(() => filteredAnalytics.value.slice(0, 10))
 
 const filteredProducts = computed(() => {
   const query = productSearch.value.toLowerCase()
@@ -1114,6 +1218,46 @@ function formatEventType(type) {
   return labels[type] || type
 }
 
+function isCustomerEvent(event) {
+  const path = normalizePagePath(event.page_path || '')
+  return !path.startsWith('/admin')
+}
+
+function normalizePagePath(path) {
+  const clean = String(path || '/').split('?')[0].replace(/\/$/, '')
+  return clean || '/'
+}
+
+function pageLabel(path) {
+  const clean = normalizePagePath(path)
+  if (clean === '/') return 'Shop'
+  if (clean === '/gallery') return 'Gallery'
+  if (clean === '/about') return 'About Us'
+  if (clean.startsWith('/product/')) {
+    const slug = clean.split('/').filter(Boolean).at(-1) || 'product'
+    return `Product: ${titleFromSlug(slug)}`
+  }
+  return clean
+}
+
+function titleFromSlug(value) {
+  return String(value || '')
+    .split('-')
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ')
+}
+
+function cleanAnalyticsName(value) {
+  const text = String(value || '').trim()
+  if (!text || text.toLowerCase() === 'undefined' || text.toLowerCase() === 'null') return 'Unnamed product'
+  return text
+}
+
+function eventDisplayName(event) {
+  return cleanAnalyticsName(event.product_name || event.metadata?.title || pageLabel(event.page_path))
+}
+
 function formatEventTime(value) {
   if (!value) return ''
   return new Intl.DateTimeFormat('en-IN', {
@@ -1355,8 +1499,35 @@ onMounted(async () => {
 
 .tab-actions {
   display: flex;
+  align-items: center;
   gap: 8px;
   flex-wrap: wrap;
+}
+
+.range-toggle {
+  display: inline-flex;
+  gap: 4px;
+  border: 1px solid #eadfd2;
+  border-radius: 999px;
+  padding: 4px;
+  background: #fffdf8;
+}
+
+.range-toggle button {
+  min-width: 44px;
+  border: 0;
+  border-radius: 999px;
+  padding: 8px 10px;
+  background: transparent;
+  color: #77695f;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.range-toggle button.active {
+  background: #241f1a;
+  color: #ffffff;
 }
 
 .tab-title {
@@ -1380,9 +1551,9 @@ onMounted(async () => {
 .analytics-card,
 .analytics-panel {
   border: 1px solid #eadfd2;
-  border-radius: 22px;
-  background: rgba(255, 253, 248, 0.92);
-  box-shadow: 0 18px 48px rgba(65, 42, 24, 0.08);
+  border-radius: 18px;
+  background: linear-gradient(180deg, #fffdf8 0%, #fff9f1 100%);
+  box-shadow: 0 14px 34px rgba(65, 42, 24, 0.07);
 }
 
 .analytics-card {
@@ -1402,7 +1573,7 @@ onMounted(async () => {
   display: block;
   margin: 8px 0 4px;
   color: #241f1a;
-  font-size: 42px;
+  font-size: 38px;
   line-height: 1;
 }
 
@@ -1420,11 +1591,24 @@ onMounted(async () => {
   gap: 16px;
 }
 
+.analytics-panels.pro {
+  grid-template-columns: minmax(0, 1.12fr) minmax(340px, 0.88fr);
+  align-items: start;
+}
+
 .analytics-panel {
   padding: 18px;
 }
 
 .analytics-panel.wide {
+  grid-column: 1 / -1;
+}
+
+.analytics-panels.pro .chart-panel {
+  grid-column: auto;
+}
+
+.analytics-panels.pro .recent-panel {
   grid-column: 1 / -1;
 }
 
@@ -1444,7 +1628,7 @@ onMounted(async () => {
 
 .bar-list {
   display: grid;
-  gap: 14px;
+  gap: 12px;
 }
 
 .bar-row {
@@ -1463,14 +1647,14 @@ onMounted(async () => {
   min-width: 0;
   overflow: hidden;
   color: #241f1a;
-  font-size: 14px;
+  font-size: 15px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .bar-track {
   overflow: hidden;
-  height: 10px;
+  height: 8px;
   border-radius: 999px;
   background: #f2e5d7;
 }
@@ -1482,11 +1666,135 @@ onMounted(async () => {
   background: linear-gradient(90deg, #a85f33, #1f9d57);
 }
 
+.trend-chart {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(18px, 1fr));
+  align-items: end;
+  gap: 9px;
+  min-height: 238px;
+  padding: 18px 10px 6px;
+  border: 1px solid #eadfd2;
+  border-radius: 18px;
+  background:
+    linear-gradient(180deg, rgba(234, 223, 210, 0.35) 1px, transparent 1px) 0 0 / 100% 25%,
+    linear-gradient(180deg, #fffdf8, #fff8ef);
+}
+
+.trend-day {
+  display: grid;
+  align-items: end;
+  gap: 8px;
+  min-width: 0;
+  height: 100%;
+}
+
+.trend-bar-stack {
+  display: flex;
+  align-items: end;
+  justify-content: center;
+  gap: 2px;
+  height: 174px;
+}
+
+.trend-bar-stack span {
+  display: block;
+  width: 8px;
+  min-height: 0;
+  border-radius: 999px 999px 3px 3px;
+  box-shadow: 0 5px 14px rgba(65, 42, 24, 0.08);
+}
+
+.trend-page {
+  background: #d7c6b4;
+}
+
+.trend-product {
+  background: #a85f33;
+}
+
+.trend-whatsapp {
+  background: #1f9d57;
+}
+
+.trend-day small {
+  overflow: hidden;
+  color: #77695f;
+  font-size: 10px;
+  font-weight: 800;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 12px;
+  color: #77695f;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.chart-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legend-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 99px;
+}
+
+.legend-dot.page {
+  background: #d7c6b4;
+}
+
+.legend-dot.product {
+  background: #a85f33;
+}
+
+.legend-dot.whatsapp {
+  background: #1f9d57;
+}
+
+.funnel-list {
+  display: grid;
+  gap: 16px;
+}
+
+.funnel-row {
+  display: grid;
+  gap: 8px;
+}
+
+.funnel-row > div:first-child {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.funnel-row strong {
+  color: #241f1a;
+  font-size: 26px;
+}
+
+.funnel-row span {
+  color: #77695f;
+  font-size: 13px;
+  font-weight: 800;
+}
+
 .activity-list {
   display: grid;
+  max-height: 340px;
   border: 1px solid #eadfd2;
   border-radius: 16px;
   overflow: hidden;
+  overflow-y: auto;
 }
 
 .activity-row {
@@ -2053,8 +2361,14 @@ onMounted(async () => {
   }
 
   .analytics-grid,
-  .analytics-panels {
+  .analytics-panels,
+  .analytics-panels.pro {
     grid-template-columns: 1fr;
+  }
+
+  .analytics-panels.pro .chart-panel,
+  .analytics-panels.pro .recent-panel {
+    grid-column: 1;
   }
 
   .activity-row {
@@ -2134,9 +2448,24 @@ onMounted(async () => {
   }
 
   .admin-header-actions,
+  .tab-actions,
   .products-row-actions,
   .gallery-admin-actions {
     width: 100%;
+  }
+
+  .tab-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .range-toggle {
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  .range-toggle button {
+    flex: 1;
   }
 
   .admin-btn {

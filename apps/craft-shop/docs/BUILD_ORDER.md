@@ -35,3 +35,12 @@ Build product detail page with WhatsApp and UPI.
 ## Step 7: Deploy
 
 Deploy frontend to Vercel.
+
+## Step 8: Admin Analytics
+
+- Run the latest `apps/craft-shop/sql/schema.sql` in Supabase.
+- Confirm `analytics_events` exists.
+- Open `/admin` and use the Dashboard tab.
+- Analytics will update as customers visit pages, open product details, view gallery items, and click WhatsApp order buttons.
+
+More detail: `apps/craft-shop/docs/ADMIN_ANALYTICS_AND_ENV.md`.
