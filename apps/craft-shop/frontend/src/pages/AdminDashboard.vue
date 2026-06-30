@@ -62,12 +62,6 @@
             <p class="tab-sub">Track visitor interest, product views, and WhatsApp order clicks.</p>
           </div>
           <div class="tab-actions">
-            <div class="range-toggle" aria-label="Analytics date range">
-              <button :class="{ active: analyticsRange === 7 }" type="button" @click="analyticsRange = 7">7D</button>
-              <button :class="{ active: analyticsRange === 30 }" type="button" @click="analyticsRange = 30">30D</button>
-              <button :class="{ active: analyticsRange === 90 }" type="button" @click="analyticsRange = 90">90D</button>
-              <button :class="{ active: analyticsRange === 'all' }" type="button" @click="analyticsRange = 'all'">All</button>
-            </div>
             <button class="admin-btn outline small" type="button" @click="loadAnalytics">Refresh</button>
           </div>
         </div>
@@ -102,11 +96,11 @@
             </div>
           </div>
 
-          <div class="analytics-panels pro">
-            <section class="analytics-panel chart-panel wide">
+          <div class="analytics-panels pro compact">
+            <section class="analytics-panel chart-panel trend-panel">
               <div class="panel-heading">
-                <h3>Activity Trend</h3>
-                <span>{{ analyticsRangeLabel }}</span>
+                <h3>Customer Trend</h3>
+                <span>Last 14 days</span>
               </div>
               <div class="trend-chart" aria-label="Daily activity chart">
                 <div v-for="day in dailyTrend" :key="day.label" class="trend-day">
@@ -125,67 +119,59 @@
               </div>
             </section>
 
-            <section class="analytics-panel funnel-panel">
+            <section class="analytics-panel donut-panel">
               <div class="panel-heading">
-                <h3>Customer Funnel</h3>
-                <span>Intent path</span>
-              </div>
-              <div class="funnel-list">
-                <div v-for="step in funnelStats" :key="step.label" class="funnel-row">
-                  <div>
-                    <strong>{{ step.count }}</strong>
-                    <span>{{ step.label }}</span>
-                  </div>
-                  <div class="bar-track"><span :style="{ width: `${step.percent}%` }"></span></div>
-                </div>
-              </div>
-            </section>
-
-            <section class="analytics-panel">
-              <div class="panel-heading">
-                <h3>Top Product Interest</h3>
-                <span>{{ loadingAnalytics ? 'Loading...' : `${topProducts.length} items` }}</span>
-              </div>
-              <div v-if="topProducts.length === 0" class="mini-empty">No product analytics yet.</div>
-              <div v-else class="bar-list">
-                <div v-for="item in topProducts" :key="item.name" class="bar-row">
-                  <div>
-                    <strong>{{ item.name }}</strong>
-                    <span>{{ item.views }} views / {{ item.clicks }} WhatsApp clicks</span>
-                  </div>
-                  <div class="bar-track"><span :style="{ width: `${item.percent}%` }"></span></div>
-                </div>
-              </div>
-            </section>
-
-            <section class="analytics-panel">
-              <div class="panel-heading">
-                <h3>Most Visited Pages</h3>
+                <h3>Customer Intent</h3>
                 <span>{{ filteredAnalytics.length }} events</span>
               </div>
-              <div v-if="topPages.length === 0" class="mini-empty">No page views yet.</div>
-              <div v-else class="bar-list compact">
-                <div v-for="page in topPages" :key="page.name" class="bar-row">
+              <div class="donut-layout">
+                <div class="donut-chart" :style="intentDonutStyle">
                   <div>
-                    <strong>{{ page.label }}</strong>
-                    <span>{{ page.count }} visits</span>
+                    <strong>{{ filteredAnalytics.length }}</strong>
+                    <span>Total</span>
                   </div>
-                  <div class="bar-track"><span :style="{ width: `${page.percent}%` }"></span></div>
+                </div>
+                <div class="donut-legend">
+                  <span v-for="segment in intentSegments" :key="segment.label">
+                    <i :style="{ background: segment.color }"></i>{{ segment.label }} <strong>{{ segment.count }}</strong>
+                  </span>
                 </div>
               </div>
             </section>
 
-            <section class="analytics-panel wide recent-panel">
+            <section class="analytics-panel donut-panel">
               <div class="panel-heading">
-                <h3>Recent Activity</h3>
-                <span>Latest customer actions</span>
+                <h3>Product Status</h3>
+                <span>{{ products.length }} products</span>
               </div>
-              <div v-if="recentAnalytics.length === 0" class="mini-empty">Activity will appear after visitors use the site.</div>
-              <div v-else class="activity-list">
-                <div v-for="event in recentAnalytics" :key="event.id" class="activity-row">
-                  <span class="activity-type">{{ formatEventType(event.event_type) }}</span>
-                  <strong>{{ eventDisplayName(event) }}</strong>
-                  <time>{{ formatEventTime(event.created_at) }}</time>
+              <div class="donut-layout">
+                <div class="donut-chart status" :style="productStatusDonutStyle">
+                  <div>
+                    <strong>{{ products.length }}</strong>
+                    <span>Total</span>
+                  </div>
+                </div>
+                <div class="donut-legend">
+                  <span v-for="segment in productStatusSegments" :key="segment.label">
+                    <i :style="{ background: segment.color }"></i>{{ segment.label }} <strong>{{ segment.count }}</strong>
+                  </span>
+                </div>
+              </div>
+            </section>
+
+            <section class="analytics-panel interest-panel">
+              <div class="panel-heading">
+                <h3>Top Interest</h3>
+                <span>{{ loadingAnalytics ? 'Loading...' : `${topProducts.length} products` }}</span>
+              </div>
+              <div v-if="topProducts.length === 0" class="mini-empty">Product interest will appear after customers open product pages.</div>
+              <div v-else class="interest-list">
+                <div v-for="item in topProducts" :key="item.name" class="interest-row">
+                  <div>
+                    <strong>{{ item.name }}</strong>
+                    <span>{{ item.views }} views / {{ item.clicks }} WhatsApp</span>
+                  </div>
+                  <em>{{ item.total }}</em>
                 </div>
               </div>
             </section>
@@ -572,7 +558,6 @@ const loadingProducts = ref(true)
 const loadingGallery = ref(true)
 const loadingAnalytics = ref(true)
 const analyticsError = ref('')
-const analyticsRange = ref(30)
 const productSearch = ref('')
 const productFilter = ref('all')
 const gallerySearch = ref('')
@@ -610,13 +595,9 @@ const visibleGalleryItems = computed(() => galleryItems.value.filter((item) => i
 const hiddenGalleryItems = computed(() => galleryItems.value.filter((item) => !item.is_visible).length)
 
 const filteredAnalytics = computed(() => {
-  const customerEvents = analyticsEvents.value.filter(isCustomerEvent)
-  if (analyticsRange.value === 'all') return customerEvents
-  const cutoff = Date.now() - Number(analyticsRange.value) * 24 * 60 * 60 * 1000
-  return customerEvents.filter((event) => new Date(event.created_at).getTime() >= cutoff)
+  return analyticsEvents.value.filter(isCustomerEvent)
 })
 
-const analyticsRangeLabel = computed(() => (analyticsRange.value === 'all' ? 'All tracked activity' : `Last ${analyticsRange.value} days`))
 const pageViewCount = computed(() => filteredAnalytics.value.filter((event) => event.event_type === 'page_view').length)
 const productViewCount = computed(() => filteredAnalytics.value.filter((event) => event.event_type === 'product_view').length)
 const whatsappClickCount = computed(() => filteredAnalytics.value.filter((event) => event.event_type === 'whatsapp_click' || event.event_type === 'custom_order_click').length)
@@ -625,6 +606,23 @@ const conversionRate = computed(() => {
   if (!productViewCount.value) return 0
   return Math.round((whatsappClickCount.value / productViewCount.value) * 100)
 })
+
+const intentSegments = computed(() => [
+  { label: 'Page', count: pageViewCount.value, color: '#d7c6b4' },
+  { label: 'Product', count: productViewCount.value, color: '#a85f33' },
+  { label: 'WhatsApp', count: whatsappClickCount.value, color: '#1f9d57' },
+  { label: 'Gallery', count: galleryInterestCount.value, color: '#7b6fb0' }
+])
+
+const productStatusSegments = computed(() => [
+  { label: 'Available', count: availableProducts.value, color: '#1f9d57' },
+  { label: 'Sold out', count: soldOutProducts.value, color: '#a33b2f' },
+  { label: 'Featured', count: featuredProducts.value, color: '#a85f33' },
+  { label: 'Gallery', count: visibleGalleryItems.value, color: '#7b6fb0' }
+])
+
+const intentDonutStyle = computed(() => ({ background: donutGradient(intentSegments.value) }))
+const productStatusDonutStyle = computed(() => ({ background: donutGradient(productStatusSegments.value) }))
 
 const topProducts = computed(() => {
   const grouped = new Map()
@@ -640,7 +638,7 @@ const topProducts = computed(() => {
       grouped.set(name, current)
     })
 
-  const list = Array.from(grouped.values()).sort((a, b) => b.total - a.total).slice(0, 5)
+  const list = Array.from(grouped.values()).sort((a, b) => b.total - a.total).slice(0, 4)
   const max = Math.max(1, ...list.map((item) => item.total))
   return list.map((item) => ({ ...item, percent: Math.max(8, Math.round((item.total / max) * 100)) }))
 })
@@ -660,7 +658,7 @@ const topPages = computed(() => {
 })
 
 const dailyTrend = computed(() => {
-  const daysToShow = analyticsRange.value === 'all' ? 14 : Math.min(Number(analyticsRange.value), 30)
+  const daysToShow = 14
   const buckets = Array.from({ length: daysToShow }, (_, index) => {
     const date = new Date()
     date.setHours(0, 0, 0, 0)
@@ -698,8 +696,6 @@ const funnelStats = computed(() => {
     { label: 'Gallery custom-order interest', count: galleryInterestCount.value }
   ].map((step) => ({ ...step, percent: Math.max(6, Math.round((step.count / max) * 100)) }))
 })
-
-const recentAnalytics = computed(() => filteredAnalytics.value.slice(0, 10))
 
 const filteredProducts = computed(() => {
   const query = productSearch.value.toLowerCase()
@@ -1218,6 +1214,23 @@ function formatEventType(type) {
   return labels[type] || type
 }
 
+function donutGradient(segments) {
+  const total = segments.reduce((sum, segment) => sum + segment.count, 0)
+  if (!total) return 'conic-gradient(#eadfd2 0deg 360deg)'
+
+  let start = 0
+  const stops = segments
+    .filter((segment) => segment.count > 0)
+    .map((segment) => {
+      const end = start + (segment.count / total) * 360
+      const stop = `${segment.color} ${start}deg ${end}deg`
+      start = end
+      return stop
+    })
+
+  return `conic-gradient(${stops.join(', ')})`
+}
+
 function isCustomerEvent(event) {
   const path = normalizePagePath(event.page_path || '')
   return !path.startsWith('/admin')
@@ -1504,32 +1517,6 @@ onMounted(async () => {
   flex-wrap: wrap;
 }
 
-.range-toggle {
-  display: inline-flex;
-  gap: 4px;
-  border: 1px solid #eadfd2;
-  border-radius: 999px;
-  padding: 4px;
-  background: #fffdf8;
-}
-
-.range-toggle button {
-  min-width: 44px;
-  border: 0;
-  border-radius: 999px;
-  padding: 8px 10px;
-  background: transparent;
-  color: #77695f;
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: 900;
-}
-
-.range-toggle button.active {
-  background: #241f1a;
-  color: #ffffff;
-}
-
 .tab-title {
   margin: 0 0 6px;
   color: #241f1a;
@@ -1592,7 +1579,7 @@ onMounted(async () => {
 }
 
 .analytics-panels.pro {
-  grid-template-columns: minmax(0, 1.12fr) minmax(340px, 0.88fr);
+  grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
   align-items: start;
 }
 
@@ -1608,7 +1595,11 @@ onMounted(async () => {
   grid-column: auto;
 }
 
-.analytics-panels.pro .recent-panel {
+.analytics-panels.compact {
+  grid-auto-flow: dense;
+}
+
+.analytics-panels.pro .interest-panel {
   grid-column: 1 / -1;
 }
 
@@ -1678,6 +1669,71 @@ onMounted(async () => {
   background:
     linear-gradient(180deg, rgba(234, 223, 210, 0.35) 1px, transparent 1px) 0 0 / 100% 25%,
     linear-gradient(180deg, #fffdf8, #fff8ef);
+}
+
+.donut-layout {
+  display: grid;
+  grid-template-columns: 132px minmax(0, 1fr);
+  gap: 16px;
+  align-items: center;
+}
+
+.donut-chart {
+  display: grid;
+  place-items: center;
+  width: 132px;
+  height: 132px;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px rgba(65, 42, 24, 0.08), 0 14px 28px rgba(65, 42, 24, 0.08);
+}
+
+.donut-chart > div {
+  display: grid;
+  place-items: center;
+  width: 78px;
+  height: 78px;
+  border-radius: 50%;
+  background: #fffdf8;
+  text-align: center;
+}
+
+.donut-chart strong {
+  color: #241f1a;
+  font-size: 24px;
+  line-height: 1;
+}
+
+.donut-chart span {
+  color: #77695f;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.donut-legend {
+  display: grid;
+  gap: 9px;
+}
+
+.donut-legend span {
+  display: grid;
+  grid-template-columns: 10px minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  color: #5f5147;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.donut-legend i {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.donut-legend strong {
+  color: #241f1a;
 }
 
 .trend-day {
@@ -1786,6 +1842,58 @@ onMounted(async () => {
   color: #77695f;
   font-size: 13px;
   font-weight: 800;
+}
+
+.interest-list {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.interest-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+  border: 1px solid #eadfd2;
+  border-radius: 14px;
+  padding: 13px;
+  background: #ffffff;
+}
+
+.interest-row div {
+  min-width: 0;
+}
+
+.interest-row strong {
+  display: block;
+  overflow: hidden;
+  color: #241f1a;
+  font-size: 14px;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.interest-row span {
+  display: block;
+  margin-top: 5px;
+  color: #77695f;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.interest-row em {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #f2e5d7;
+  color: #79401f;
+  font-style: normal;
+  font-weight: 900;
 }
 
 .activity-list {
@@ -2367,7 +2475,7 @@ onMounted(async () => {
   }
 
   .analytics-panels.pro .chart-panel,
-  .analytics-panels.pro .recent-panel {
+  .analytics-panels.pro .interest-panel {
     grid-column: 1;
   }
 
@@ -2435,6 +2543,37 @@ onMounted(async () => {
     font-size: 34px;
   }
 
+  .trend-chart {
+    min-height: 180px;
+  }
+
+  .trend-bar-stack {
+    height: 116px;
+  }
+
+  .donut-layout {
+    grid-template-columns: 112px minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  .donut-chart {
+    width: 112px;
+    height: 112px;
+  }
+
+  .donut-chart > div {
+    width: 68px;
+    height: 68px;
+  }
+
+  .donut-chart strong {
+    font-size: 20px;
+  }
+
+  .interest-list {
+    grid-template-columns: 1fr;
+  }
+
   .bar-row > div:first-child {
     align-items: flex-start;
     flex-direction: column;
@@ -2457,15 +2596,6 @@ onMounted(async () => {
   .tab-actions {
     align-items: stretch;
     flex-direction: column;
-  }
-
-  .range-toggle {
-    justify-content: space-between;
-    width: 100%;
-  }
-
-  .range-toggle button {
-    flex: 1;
   }
 
   .admin-btn {

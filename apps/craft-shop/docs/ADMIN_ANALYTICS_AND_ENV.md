@@ -27,10 +27,9 @@ The Dashboard tab shows:
 - WhatsApp order/enquiry clicks
 - gallery and custom-order interest
 - activity trend by day
-- customer funnel
+- customer intent donut chart
+- product status donut chart
 - top product interest
-- most visited pages
-- recent customer actions
 
 Admin routes such as `/admin` and `/admin/login` are intentionally excluded from customer analytics so owner activity does not pollute customer traffic reports.
 
